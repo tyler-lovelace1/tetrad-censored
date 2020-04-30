@@ -112,6 +112,17 @@ public class IndTestMultinomialQL implements IndependenceTest {
         this.regression = new RegressionDataset(internalData);
         this.coxRegression = new CoxRegression(internalData);
 
+        int[] _rows = getNonMissingRows(originalData.getVariable(0), originalData.getVariable(1), originalData.getVariables());
+
+        List<Node> cens = new ArrayList<>();
+        List<Node> complete = new ArrayList<>();
+        for (Node n : originalData.getVariables()) {
+            if (n instanceof CensoredVariable) cens.add(n);
+            else complete.add(n);
+        }
+        System.out.println(cens);
+        System.out.println(complete);
+        estimateExpVal(cens, complete, _rows);
     }
 
     /**
@@ -225,7 +236,7 @@ public class IndTestMultinomialQL implements IndependenceTest {
         List<Node> yzList = new ArrayList<>();
         List<Node> zList = new ArrayList<>();
 
-        DoubleMatrix2D expVals = factory2D.make(1, 1, 0.0);
+//        DoubleMatrix2D expVals = factory2D.make(1, 1, 0.0);
 
         yzList.addAll(variablesPerNode.get(y));
         boolean censregressors = y instanceof CensoredVariable;
@@ -239,15 +250,22 @@ public class IndTestMultinomialQL implements IndependenceTest {
 
         List<Node> cens = new ArrayList<>();
         if (censregressors) {
-            List<Node> complete = new ArrayList<>();
+//            List<Node> complete = new ArrayList<>();
             for (Node n : yzList) {
                 if (n instanceof CensoredVariable) cens.add(n);
-                else complete.add(n);
+//                else complete.add(n);
             }
-            expVals = estimateExpVal(cens, complete, _rows);
+//            expVals = estimateExpVal(cens, complete, _rows);
         }
 
 //        logisticRegression.setRows(_rows);
+
+        DoubleMatrix2D expVals = factory2D.make(_rows.length, cens.size(),0);
+        if (censregressors) {
+            for (int i = 0; i < cens.size(); i++) {
+                expVals.viewColumn(i).assign(((CensoredVariable) cens.get(i)).getExpval());
+            }
+        }
 
         //double[][] coeffsDep = new double[variablesPerNode.get(x).size()][];
         DoubleMatrix2D coeffsNull = DoubleFactory2D.dense.make(zList.size()+1, variablesPerNode.get(x).size());
@@ -444,7 +462,7 @@ public class IndTestMultinomialQL implements IndependenceTest {
             }
         }
 
-        DoubleMatrix2D expVals = factory2D.make(1,1,0);
+//        DoubleMatrix2D expVals = factory2D.make(1,1,0);
         List<Node> regressors = new ArrayList<Node>();
         regressors.add(internalData.getVariable(y.getName()));
 
@@ -459,12 +477,19 @@ public class IndTestMultinomialQL implements IndependenceTest {
 
         List<Node> cens = new ArrayList<>();
         if (censregressors) {
-            List<Node> complete = new ArrayList<>();
+//            List<Node> complete = new ArrayList<>();
             for (Node n : regressors) {
                 if (n instanceof CensoredVariable) cens.add(n);
-                else complete.add(n);
+//                else complete.add(n);
             }
-            expVals = estimateExpVal(cens, complete, _rows);
+//            expVals = estimateExpVal(cens, complete, _rows);
+        }
+
+        DoubleMatrix2D expVals = factory2D.make(_rows.length, cens.size(),0);
+        if (censregressors) {
+            for (int i = 0; i < cens.size(); i++) {
+                expVals.viewColumn(i).assign(((CensoredVariable) cens.get(i)).getExpval());
+            }
         }
 
         RegressionResult result;
@@ -508,7 +533,7 @@ public class IndTestMultinomialQL implements IndependenceTest {
             }
         }
 
-        DoubleMatrix2D expVals = factory2D.make(1,1,0);
+//        DoubleMatrix2D expVals = factory2D.make(1,1,0);
         List<Node> zList = new ArrayList<>();
         List<Node> yzList = new ArrayList<>();
         if (y instanceof DiscreteVariable) {
@@ -527,14 +552,22 @@ public class IndTestMultinomialQL implements IndependenceTest {
         }
 
         int[] _rows = getNonMissingRows(x, y, z);
+
         List<Node> cens = new ArrayList<>();
         if (censregressors) {
-            List<Node> complete = new ArrayList<>();
+//            List<Node> complete = new ArrayList<>();
             for (Node n : yzList) {
                 if (n instanceof CensoredVariable) cens.add(n);
-                else complete.add(n);
+//                else complete.add(n);
             }
-            expVals = estimateExpVal(cens, complete, _rows);
+//            expVals = estimateExpVal(cens, complete, _rows);
+        }
+
+        DoubleMatrix2D expVals = factory2D.make(_rows.length, cens.size(),0);
+        if (censregressors) {
+            for (int i = 0; i < cens.size(); i++) {
+                expVals.viewColumn(i).assign(((CensoredVariable) cens.get(i)).getExpval());
+            }
         }
 
 //        int[] _rows = getNonMissingRows(x, y, z);
@@ -582,7 +615,7 @@ public class IndTestMultinomialQL implements IndependenceTest {
     }
 
 
-    private DoubleMatrix2D estimateExpVal(List<Node> cens, List<Node> complete, int[] _rows) {
+    private void estimateExpVal(List<Node> cens, List<Node> complete, int[] _rows) {
         Algebra alg = new Algebra();
         DoubleMatrix2D expVals = factory2D.make(_rows.length, cens.size(), 0.0);
         DoubleMatrix1D X;
@@ -614,7 +647,8 @@ public class IndTestMultinomialQL implements IndependenceTest {
 //                        System.out.println("expected percentile: " + P);
                         T =  weib_params[0] * Math.pow(-Math.log(P), 1/weib_params[1]);
 //                        System.out.println("expected time: " + T);
-                        expVals.set(i, col, T);
+//                        expVals.set(i, col, T);
+                        expectedTime[i] = T;
                         if (T < X.get(i)) {
                             System.out.println("Emergency nonsense");
                             System.out.println("Weibull params: " + weib_params[0] + "\t" + weib_params[1]);
@@ -625,7 +659,8 @@ public class IndTestMultinomialQL implements IndependenceTest {
                         }
                     }
                     else {
-                        expVals.set(i, col, X.get(_rows[i]));
+//                        expVals.set(i, col, X.get(_rows[i]));
+                        expectedTime[i] = X.get(_rows[i]);
                     }
                 }
             } else {
@@ -643,7 +678,10 @@ public class IndTestMultinomialQL implements IndependenceTest {
 //                        System.out.println("expected percentile: " + (1-P));
                         T =  weib_params[0] * Math.pow(-Math.log(P) / theta.get(_rows[i]), 1/weib_params[1]);
 //                        System.out.println("expected time: " + T);
-                        expVals.set(i, col, T);
+//                        expVals.set(i, col, T);
+                        if (T == Double.POSITIVE_INFINITY) T = 1e8;
+                        expectedTime[i] = T;
+                        System.out.println(X.get(_rows[i]) + "* --> " + T);
                         if (T < X.get(_rows[i])) {
                             System.out.println("Emergency nonsense");
                             System.out.println("Weibull params: " + weib_params[0] + "\t" + weib_params[1]);
@@ -655,13 +693,16 @@ public class IndTestMultinomialQL implements IndependenceTest {
                         }
                     }
                     else {
-                        expVals.set(i, col, X.get(_rows[i]));
+//                        expVals.set(i, col, X.get(_rows[i]));
+                        expectedTime[i] = X.get(_rows[i]);
+                        System.out.println(X.get(_rows[i]));
                     }
                 }
             }
-            col++;
+            ((CensoredVariable) _n).setExpval(expectedTime);
+//            col++;
         }
-        return expVals;
+//        return expVals;
     }
 
     private double[] estimateWeibull(CensoredVariable _n, List<Node> complete, double[] b) {
