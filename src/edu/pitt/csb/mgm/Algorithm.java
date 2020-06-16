@@ -13,12 +13,14 @@ public final class Algorithm implements TetradSerializable {
     static final long serialVersionUID = 23L;
 
     public static final  Algorithm FCI = new Algorithm("FCI");
+    public static final  Algorithm CFCI = new Algorithm("CFCI");
     public static final Algorithm MGMFCI = new Algorithm("MGM-FCI");
     public static final Algorithm MGMFCIMAX = new Algorithm("MGM-FCI-MAX");
     public static final Algorithm PCS = new Algorithm("PC-Stable");
     public static final Algorithm CPC = new Algorithm("CPC");
     public static final Algorithm PCMAX = new Algorithm("PC-Max");
     public static final Algorithm FGS = new Algorithm("FGES");
+    public static final Algorithm LiNG = new Algorithm("LiNG");
     public static final Algorithm FCIMAX = new Algorithm("FCI-MAX");
     public static final Algorithm MGM = new Algorithm("MGM");
     public static final Algorithm NONE = new Algorithm("No type");
@@ -49,10 +51,14 @@ public final class Algorithm implements TetradSerializable {
             return new SearchWrappers.CpcStableWrapper(params);
         else if(a==Algorithm.FCI)
             return new SearchWrappers.FCIWrapper(params);
+        else if(a==Algorithm.CFCI)
+            return new SearchWrappers.CFCIWrapper(params);
         else if(a==Algorithm.FCIMAX)
             return new SearchWrappers.FCIMAXWrapper(params);
         else if(a==Algorithm.FGS)
             return new SearchWrappers.FgesWrapper(params);
+        else if(a==Algorithm.LiNG)
+            return new SearchWrappers.LiNGWrapper(params);
         else if(a==Algorithm.MGM)
             return new SearchWrappers.MGMWrapper(params);
         else if(a==Algorithm.PCMAX)

@@ -628,15 +628,15 @@ public class IndTestMultinomialQL implements IndependenceTest {
         int col = 0;
         for (Node _n : cens) {
             CoxRegressionResult result = coxRegression.regress((CensoredVariable) _n, complete, _rows);
-//            System.out.println("estimated beta:");
-//            for (int i = 0; i < result.getCoef().length; i++) System.out.print(" " + result.getCoef()[i]);
-//            System.out.println();
+            System.out.println("estimated beta:");
+            for (int i = 0; i < result.getCoef().length; i++) System.out.print(" " + result.getCoef()[i]);
+            System.out.println();
             double[] weib_params = estimateWeibull((CensoredVariable) _n, complete, result.getCoef());
             double[] expectedTime = new double[((CensoredVariable) _n).getCensor().length];
             List<Node> censList = new ArrayList<>();
             censList.add(_n);
             X = factory2D.make(internalData.subsetColumns(censList).getDoubleData().toArray()).viewColumn(0);
-            if (complete.size() == 0) {
+            if (true) {
                 for (int i = 0; i < _rows.length; i++) {
                     if (((CensoredVariable) _n).getCensor(_rows[i]) == 0) {
 //                        System.out.println("reported time: " + X.get(i));
@@ -649,6 +649,7 @@ public class IndTestMultinomialQL implements IndependenceTest {
 //                        System.out.println("expected time: " + T);
 //                        expVals.set(i, col, T);
                         expectedTime[i] = T;
+                        System.out.println(X.get(_rows[i]) + "* --> " + T);
                         if (T < X.get(i)) {
                             System.out.println("Emergency nonsense");
                             System.out.println("Weibull params: " + weib_params[0] + "\t" + weib_params[1]);
@@ -679,18 +680,18 @@ public class IndTestMultinomialQL implements IndependenceTest {
                         T =  weib_params[0] * Math.pow(-Math.log(P) / theta.get(_rows[i]), 1/weib_params[1]);
 //                        System.out.println("expected time: " + T);
 //                        expVals.set(i, col, T);
-                        if (T == Double.POSITIVE_INFINITY) T = 1e8;
-                        expectedTime[i] = T;
-                        System.out.println(X.get(_rows[i]) + "* --> " + T);
-                        if (T < X.get(_rows[i])) {
-                            System.out.println("Emergency nonsense");
-                            System.out.println("Weibull params: " + weib_params[0] + "\t" + weib_params[1]);
+                        if (T == Double.POSITIVE_INFINITY) {
+//                            System.out.println("Emergency nonsense");
+//                            System.out.println("Weibull params: " + weib_params[0] + "\t" + weib_params[1]);
                             System.out.println("reported time: " + X.get(i));
                             System.out.println("reported percentile: " + U);
                             System.out.println("theta[i]: " + theta.get(i));
                             System.out.println("expected percentile: " + P);
                             System.out.println("expected time: " + T);
+                            T = 1e4;
                         }
+                        expectedTime[i] = T;
+                        System.out.println(X.get(_rows[i]) + "* --> " + T);
                     }
                     else {
 //                        expVals.set(i, col, X.get(_rows[i]));

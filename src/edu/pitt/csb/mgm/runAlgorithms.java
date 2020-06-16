@@ -358,7 +358,7 @@ public class runAlgorithms {
                 System.out.println("No algorithm specified, and you are not running MGM\nTherefore no method will be run to analyze the data.\n Please use -runMGM to run MGM or -a <Algorithm Name> to run a causal discovery method");
                 System.exit(-1);
             }
-            String [] algos = {"FCI","FCI-MAX","PCS","CPC","MAX","FGES","None"};
+            String [] algos = {"FCI","CFCI","FCI-MAX","PCS","CPC","MAX","FGES","LiNG", "None"};
             boolean foundAl = false;
             for(String x:algos)
             {
@@ -368,7 +368,7 @@ public class runAlgorithms {
 
             //Ensure that algorithm name is valid
             if(!foundAl)
-                throw new Exception("Unknown Algorithm: " + alg + ", Please use either \"FCI\",\"FCI-MAX\",\"PCS\", \"CPC\", \"MAX\", \"FGES\" or \"None\" (MGM Only)");
+                throw new Exception("Unknown Algorithm: " + alg + ", Please use either \"FCI\", \"CFCI\", \"FCI-MAX\", \"PCS\", \"CPC\", \"MAX\", \"FGES\", \"LiNG\" or \"None\" (MGM Only)");
 
 
             //Workflow for running StEPS to compute optimal Lambda parameters
@@ -975,6 +975,10 @@ public class runAlgorithms {
         {
             a = Algorithm.FCI;
         }
+        else if(alg.equals("CFCI"))
+        {
+            a = Algorithm.CFCI;
+        }
         else if(alg.equals("FCI-MAX"))
         {
             a = Algorithm.FCIMAX;
@@ -982,6 +986,10 @@ public class runAlgorithms {
         else if(alg.equals("FGES"))
         {
             a = Algorithm.FGS;
+        }
+        else if(alg.equals("LiNG"))
+        {
+            a = Algorithm.LiNG;
         }
         else if(alg.equals("None"))
         {

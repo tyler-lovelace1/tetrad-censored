@@ -269,7 +269,7 @@ public class ProximalGradient {
 
     //run FISTA with step size backtracking attempt to speed up
     public DoubleMatrix1D learnBackTrack(ConvexProximal cp, DoubleMatrix1D Xin, double epsilon, int iterLimit) {
-        System.out.println("intial L: " + L);
+//        System.out.println("intial L: " + L);
         DoubleMatrix1D X = Xin.copy(); // cp.proximalOperator(1.0 / L, Xin.copy());
         DoubleMatrix1D Y = X.copy();
         DoubleMatrix1D Z = X.copy();
@@ -304,7 +304,7 @@ public class ProximalGradient {
                 else
                     theta = 1.0;
 
-                System.out.println("theta: " + theta);
+//                System.out.println("theta: " + theta);
 
 //                if(Double.isNaN(theta)) {
 //                    System.out.println("Lold: " + Lold);
@@ -343,7 +343,7 @@ public class ProximalGradient {
 //                System.out.println("X: " + X);
 //                System.out.println("Y: " + Y);
 //                System.out.println("XmY: " + XmY);
-                System.out.println("normXY: " + normXY);
+//                System.out.println("normXY: " + normXY);
 
                 double Qx;
                 double LocalL;
@@ -415,7 +415,7 @@ public class ProximalGradient {
 //                    }
 //                }
 
-                System.out.println("LocalL: " + LocalL);
+//                System.out.println("LocalL: " + LocalL);
 
                 if(LocalL <= L){
                     break;
@@ -444,7 +444,7 @@ public class ProximalGradient {
 
             dx = norm2(X.copy().assign(Xold, Functions.minus)) / Math.max(1,norm2(X));
 
-            System.out.println(noEdgeChangeCount + ", " + diffEdges + ", " + dx);
+//            System.out.println(noEdgeChangeCount + ", " + diffEdges + ", " + dx);
 
             //sometimes there are more edge changes after initial 0, so may want to do two zeros in a row...
             if (diffEdges == 0 && edgeConverge) {
@@ -489,7 +489,7 @@ public class ProximalGradient {
             }
 
 
-            printIter = 1;
+            printIter = 50;
             if (iterCount % printIter == 0) {
                 //System.out.println("Iter: " + iterCount + " |dx|/|x|: " + dx + " normX: " + norm2(X) + " nll: " + Fx + " reg: " + Gx + " DiffEdges: " + diffEdges + " L: " + L);
               //  System.out.println("Iter: " + iterCount + " |dx|/|x|: " + dx + " nll: " + negLogLikelihood(params) + " reg: " + regTerm(params));
@@ -505,8 +505,8 @@ public class ProximalGradient {
                 break;
             }
         }
-        
-        System.out.println("    " + Thread.currentThread().getName() + ": Finished, iter: " + iterCount);
+        double temp = Fx+Gx;
+        System.out.println("    " + Thread.currentThread().getName() + ": Finished, iter: " + iterCount + ": " + temp);
         return X;
     }
 

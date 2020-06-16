@@ -29,6 +29,7 @@ import edu.cmu.tetrad.util.ChoiceGenerator;
 import edu.cmu.tetrad.util.TetradLogger;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -117,6 +118,8 @@ public final class Cfci implements GraphSearch {
     private Graph initialGraph;
     private TetradLogger logger = TetradLogger.getInstance();
 
+    public ConcurrentHashMap<String,String> whyOrient;
+
     private boolean verbose = false;
 
     //============================CONSTRUCTORS============================//
@@ -158,6 +161,7 @@ public final class Cfci implements GraphSearch {
 
     public Graph search() {
         long beginTime = System.currentTimeMillis();
+        whyOrient = new ConcurrentHashMap<String,String>();
         if (verbose) {
             logger.log("info", "Starting FCI algorithm.");
             logger.log("info", "Independence test = " + independenceTest + ".");
@@ -175,9 +179,12 @@ public final class Cfci implements GraphSearch {
         this.graph = new EdgeListGraph(nodes);
         this.graph.fullyConnect(Endpoint.TAIL);
 
-        if(this.initialGraph!=null)
-            this.graph=initialGraph;
+        if(this.initialGraph!=null) {
+            System.out.println("using initialGraph");
+            this.graph = initialGraph;
+        }
 //        // Step FCI B.  (Zhang's step F2.)
+
         FasStableConcurrent adj = new FasStableConcurrent(graph, independenceTest);
         adj.setKnowledge(getKnowledge());
         adj.setDepth(depth);
@@ -232,7 +239,7 @@ public final class Cfci implements GraphSearch {
         // Step CI D. (Zhang's step F4.)
 
         final FciOrient fciOrient = new FciOrient(new SepsetsConservative(graph, independenceTest,
-                new SepsetMap(), depth));
+                new SepsetMap(), depth), whyOrient);
 
         fciOrient.setCompleteRuleSetUsed(completeRuleSetUsed);
         fciOrient.setMaxPathLength(-1);

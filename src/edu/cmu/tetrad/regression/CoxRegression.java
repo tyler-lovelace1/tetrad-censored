@@ -16,6 +16,7 @@ import edu.cmu.tetrad.util.RandomUtil;
 import edu.cmu.tetrad.util.TetradSerializable;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.math3.distribution.NormalDistribution;
+import org.apache.commons.math3.util.MathArrays;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -220,7 +221,163 @@ public class CoxRegression implements TetradSerializable {
             }
 
             beta.assign(p, Functions.plusMult(a));
-//            System.out.println("\tloss: " + new_l);
+            System.out.println("\tloss: " + new_l);
+        }
+
+        System.out.println("final loss: " + new_l);
+
+        hess = factory2D.make(beta.size(), beta.size(), 0.0);
+        grad = factory1D.make(beta.size(), 0.0);
+
+        gradHess(beta, grad, hess, X, _target);
+
+        DoubleMatrix2D cov = alg.inverse(hess);
+
+        int df = X.rows() - regressors.size();
+        for (int i = 0; i < regressors.size(); i++) {
+            b[i] = beta.get(i);
+            se[i] = Math.sqrt(Math.abs(cov.get(i,i)));
+            z[i] = b[i] / se[i];
+            pval[i] = 2 * (1.0 - ProbUtils.tCdf(Math.abs(z[i]), df)); // norm(z[i]);
+            assert !Double.isNaN(pval[i]);
+//            System.out.println("b: " + b[i]);
+//            System.out.println("var: " + -cov.get(i,i));
+//            System.out.println("se: " + se[i]);
+//            System.out.println("z: " + z[i]);
+//            System.out.println("pval: " + pval[i]);
+        }
+
+        return new CoxRegressionResult(regressorNames, X.rows(), b, z, pval, se, 0.5, new_l, this.alpha);
+    }
+
+    /**
+     * Regresses <code>target</code> on the <code>regressors</code>, yielding
+     * a regression plane.
+     *
+     * @param target     the target variable, being regressed.
+     * @param regressors the list of variables being regressed on.
+     * @return the regression plane.
+     */
+    public CoxRegressionResult lassoRegress(CensoredVariable target, List<Node> regressors, int[] _rows, double lambda) {
+        System.out.println("fitting " + target.getName());
+
+        DoubleMatrix2D X;
+        CensoredVariable _target;
+        DataSet temp;
+        List<Node> tempList = new ArrayList<Node>();
+        String[] regressorNames = new String[regressors.size()];
+
+        System.out.println("Regressors:");
+        for (int i = 0; i < regressors.size(); i++) {
+            tempList.add(regressors.get(i));
+            regressorNames[i] = regressors.get(i).getName();
+            System.out.print(regressorNames[i] + ", ");
+        }
+        System.out.println();
+
+//        double[] _time;
+
+        if (regressors.size() == 0) {
+            X = factory2D.make(_rows.length, 1, 0.0);
+            for (int i = 0; i < _rows.length; i++) {
+                X.set(i, 0, RandomUtils.nextDouble(0, 1)-0.5);
+            }
+            _target = target;
+        } else {
+            tempList.add(target);
+            temp = data.subsetColumns(tempList).subsetRows(_rows);
+            _target = (CensoredVariable) temp.getVariable(target.getName());
+//            System.out.println(_target.getOrder().length);
+//            System.out.println("censor length: " + _target.getCensor().length);
+//            System.out.println("order length: " + _target.getOrder().length);
+            X = factory2D.make(temp.subsetColumns(regressors).getDoubleData().toArray());
+
+//            if (getRows().length < data.getNumRows()) {
+////                _time = temp
+//            }
+        }
+
+        DoubleMatrix2D hess;
+        DoubleMatrix1D beta = factory1D.make(X.columns(), 0.0);
+        DoubleMatrix1D betascale;
+        DoubleMatrix1D proxOp;
+        DoubleMatrix1D grad;
+        DoubleMatrix1D p;
+        double old_l = Double.POSITIVE_INFINITY;
+        double new_l; // = loss(beta, X, target);
+        double a, m, t;
+        double[] b = new double[X.columns()];
+        double[] se = new double[X.columns()];
+        double[] z = new double[X.columns()];
+        double[] pval = new double[X.columns()];
+        double c = 0.1;
+//        String[] regressorNames = new String[regressors.size()];
+
+        int Nc = 0;
+        for (int i = 0; i < _target.getCensor().length; i++) Nc += _target.getCensor()[i];
+
+        if (regressors.size() == 0) {
+            new_l = loss(beta, X, target);
+            b[0] = 0.0;
+            z[0] = 0.0;
+            pval[0] = 1.0;
+            se[0] = 1.0;
+            return new CoxRegressionResult(regressorNames, _rows.length, b, z, pval, se, 0.5, new_l, this.alpha);
+        }
+
+        new_l = loss(beta, X, _target);
+
+//        System.out.println("complete samples: " + _rows.length);
+
+//        System.out.println("everything initialized");
+
+//        if (data.subsetColumns(regressors).isContinuous()) c = 0.5;
+
+//        System.out.println("order: ");
+//        for (int idx :  target.getOrder()) System.out.print(idx + " ");
+//        System.out.println("H: ");
+//        for (int idx :  target.getH()) System.out.print(idx + " ");
+        System.out.println("initial loss: " + new_l);
+
+        while (Math.abs(old_l - new_l) > 1e-5) {
+            old_l = new_l;
+            a = 1;
+
+            hess = factory2D.make(beta.size(), beta.size(), 0.0);
+            grad = factory1D.make(beta.size(), 0.0);
+
+            gradHess(beta, grad, hess, X, _target);
+
+//            System.out.println(grad);
+//            System.out.println(hess);
+
+            p = alg.mult(alg.inverse(hess), grad);
+            p.assign(Functions.mult(-1.0/Math.sqrt(alg.norm2(p))));
+
+            m = alg.mult(p, grad);
+
+            assert m > 0;
+
+            t = -c * m;
+
+            while (true) {
+                new_l = loss(beta.copy().assign(p, Functions.plusMult(a)), X, _target);
+//                System.out.println("\t\talpha: " + a);
+                if (old_l - new_l <= a*t) {
+                    break;
+                }
+                a /= 2;
+            }
+
+            beta.assign(p, Functions.plusMult(a));
+            System.out.println("\tloss: " + new_l);
+            proxOp = factory1D.make(X.columns(), 1.0);
+            betascale = factory1D.make(X.columns(), -a*lambda);
+            proxOp.assign(betascale.assign(beta.copy().assign(Functions.abs), Functions.div), Functions.plus);
+            proxOp.assign(Functions.max(0.0));
+            beta.assign(proxOp, Functions.mult);
+//            System.out.println(proxOp);
+//            System.out.println(beta);
         }
 
         System.out.println("final loss: " + new_l);
@@ -380,7 +537,7 @@ public class CoxRegression implements TetradSerializable {
             }
 
             beta.assign(p, Functions.plusMult(a));
-//            System.out.println("\tloss: " + new_l);
+            System.out.println("\tloss: " + new_l);
         }
 
         System.out.println("final loss: " + new_l);

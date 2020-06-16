@@ -1119,7 +1119,7 @@ public class survivalMGM extends ConvexProximal implements GraphSearch{
         //par is a copy so we can update it
     	survivalMGMParams par = new survivalMGMParams(parIn, p, lsum, r);
 
-        calcCensoredWeights(par);
+//        calcCensoredWeights(par);
 
         //penbeta = t(1).*(wv(1:p)'*wv(1:p));
         //betascale=zeros(size(beta));
@@ -1176,7 +1176,10 @@ public class survivalMGM extends ConvexProximal implements GraphSearch{
             }
         }
 
-        DoubleMatrix2D gammaWeight = censoredWeights.viewPart(0, 0, p, r);
+//        DoubleMatrix2D gammaWeight = censoredWeights.viewPart(0, 0, p, r);
+        DoubleMatrix2D gammaWeight = factory2D.make(p,r,0);
+        for (int i = 0; i < r; i++) gammaWeight.viewColumn(i).assign(weights.viewPart(0, p));
+//                DoubleMatrix1D gammaWeight = weights.viewPart(0, p);
         DoubleMatrix2D absgamma = par.gamma.copy().assign(Functions.abs);
         double gammaNorms = absgamma.assign(gammaWeight, Functions.mult).zSum();
         /*
@@ -1204,7 +1207,9 @@ public class survivalMGM extends ConvexProximal implements GraphSearch{
 //        	etaNorms += alg.mult(par.eta.viewColumn(i).copy().assign(Functions.abs), weightsByCat);
         	for(int j = 0; j < q; j++){
                 DoubleMatrix1D tempVec = par.eta.viewColumn(i).viewPart(lcumsum[j], l[j]);
-                etaNorms += censoredWeights.get(p+j, i)  * Math.sqrt(alg.norm2(tempVec));
+//                etaNorms += censoredWeights.get(p+j, i)  * Math.sqrt(alg.norm2(tempVec));
+//                etaNorms += weights.get(p+j)  * Math.sqrt(alg.norm2(tempVec));
+                etaNorms += Math.sqrt(alg.norm2(tempVec));
             }
         }
 
@@ -1499,7 +1504,7 @@ public class survivalMGM extends ConvexProximal implements GraphSearch{
         //par is a copy so we can update it
         survivalMGMParams par = new survivalMGMParams(X.copy(), p, lsum, r);
 
-        calcCensoredWeights(par);
+//        calcCensoredWeights(par);
 
         //penbeta = t(1).*(wv(1:p)'*wv(1:p));
         //betascale=zeros(size(beta));
@@ -1577,25 +1582,27 @@ public class survivalMGM extends ConvexProximal implements GraphSearch{
         }
 
 //        DoubleMatrix2D gammaWeight = censoredWeights.viewPart(0, 0, p, r);
-//        DoubleMatrix2D gammascale = gammaWeight.copy().assign(Functions.mult(-tlam.get(3)));
-//        DoubleMatrix2D absgamma = par.gamma.copy().assign(Functions.abs);
-//        gammascale.assign(absgamma, Functions.div);
-//        gammascale.assign(Functions.plus(1));
-//        gammascale.assign(Functions.max(0));
-//        par.gamma.assign(gammascale, Functions.mult);
+        DoubleMatrix2D gammaWeight = factory2D.make(p,r,0);
+        for (int i = 0; i < r; i++) gammaWeight.viewColumn(i).assign(weights.viewPart(0, p));
+        DoubleMatrix2D gammascale = gammaWeight.copy().assign(Functions.mult(-tlam.get(3)));
+        DoubleMatrix2D absgamma = par.gamma.copy().assign(Functions.abs);
+        gammascale.assign(absgamma, Functions.div);
+        gammascale.assign(Functions.plus(1));
+        gammascale.assign(Functions.max(0));
+        par.gamma.assign(gammascale, Functions.mult);
 
-        double absgamma;
-        double gammascale;
-//        double gammaNorms = 0;
-        for (int i = 0; i < r; i++) {
-            for (int j = 0; j < p; j++) {
-                absgamma = Math.abs(par.gamma.get(j,i));
-                gammascale = Math.max(0, 1 - censoredWeights.get(j, i) * tlam.get(3) / absgamma);
-                if (absgamma == 0) gammascale = 0.0;
-                par.gamma.set(j,i, gammascale * par.gamma.get(j,i));
-//                gammaNorms += censoredWeights.get(j, i) * absgamma;
-            }
-        }
+//        double absgamma;
+//        double gammascale;
+////        double gammaNorms = 0;
+//        for (int i = 0; i < r; i++) {
+//            for (int j = 0; j < p; j++) {
+//                absgamma = Math.abs(par.gamma.get(j,i));
+//                gammascale = Math.max(0, 1 - censoredWeights.get(j, i) * tlam.get(3) / absgamma);
+//                if (absgamma == 0) gammascale = 0.0;
+//                par.gamma.set(j,i, gammascale * par.gamma.get(j,i));
+////                gammaNorms += censoredWeights.get(j, i) * absgamma;
+//            }
+//        }
 
         /*
         for (int i = 0; i < r; i++) {
@@ -1637,13 +1644,15 @@ public class survivalMGM extends ConvexProximal implements GraphSearch{
 //                    }
 //                }
 //                tempVec.viewPart(minIdx, 1).assign(0.0);
-                double etaScale;
-                if (norm2(tempVec)==0) {
-                    etaScale = 0.0;
-                } else {
-                    etaScale = Math.max(0, 1 - censoredWeights.get(p + j, i) * tlam.get(4) / norm2(tempVec));
-                }
-                tempVec.assign(Functions.mult(etaScale));
+//                double etaScale;
+//                if (norm2(tempVec)==0) {
+//                    etaScale = 0.0;
+//                } else {
+//                    etaScale = Math.max(0, 1 - censoredWeights.get(p + j, i) * tlam.get(4) / norm2(tempVec));
+//                }
+//                tempVec.assign(Functions.mult(etaScale));
+//                tempVec.assign(Functions.mult(Math.max(0, 1 - weights.get(p + j) * tlam.get(4) / norm2(tempVec))));
+                tempVec.assign(Functions.mult(Math.max(0, 1 - tlam.get(4) / norm2(tempVec))));
             }
         }
         
@@ -1669,7 +1678,7 @@ public class survivalMGM extends ConvexProximal implements GraphSearch{
         //par is a copy so we can update it
         survivalMGMParams par = new survivalMGMParams(X, p, lsum, r);
 
-        calcCensoredWeights(par);
+//        calcCensoredWeights(par);
         
         // System.out.println(par.toString());
 
@@ -1765,21 +1774,30 @@ public class survivalMGM extends ConvexProximal implements GraphSearch{
 //        gammascale.assign(absgamma, Functions.div);
 //        gammascale.assign(Functions.plus(1));
 //        gammascale.assign(Functions.max(0));
+        DoubleMatrix2D gammaWeight = factory2D.make(p,r,0);
+        for (int i = 0; i < r; i++) gammaWeight.viewColumn(i).assign(weights.viewPart(0, p));
+        DoubleMatrix2D gammascale = gammaWeight.copy().assign(Functions.mult(-tlam.get(3)));
+        DoubleMatrix2D absgamma = par.gamma.copy().assign(Functions.abs);
+        gammascale.assign(absgamma, Functions.div);
+        gammascale.assign(Functions.plus(1));
+        gammascale.assign(Functions.max(0));
+        par.gamma.assign(gammascale, Functions.mult);
+        double gammaNorms = absgamma.assign(gammaWeight, Functions.mult).zSum();
 
-        double absgamma;
-        double gammascale;
-        double gammaNorms = 0;
-        for (int i = 0; i < r; i++) {
-            for (int j = 0; j < p; j++) {
-                absgamma = Math.abs(par.gamma.get(j,i));
-                gammascale = Math.max(0, 1 - censoredWeights.get(j, i) * tlam.get(3) / absgamma);
-//                gammascale = Math.max(0, 1 - weights.get(j) * tlam.get(3) / absgamma);
-                if (absgamma == 0) gammascale = 0.0;
-                par.gamma.set(j,i, gammascale * par.gamma.get(j,i));
-                gammaNorms += censoredWeights.get(j, i) * absgamma;
-//                gammaNorms += weights.get(j) * absgamma;
-            }
-        }
+//        double absgamma;
+//        double gammascale;
+//        double gammaNorms = 0;
+//        for (int i = 0; i < r; i++) {
+//            for (int j = 0; j < p; j++) {
+//                absgamma = Math.abs(par.gamma.get(j,i));
+//                gammascale = Math.max(0, 1 - censoredWeights.get(j, i) * tlam.get(3) / absgamma);
+////                gammascale = Math.max(0, 1 - weights.get(j) * tlam.get(3) / absgamma);
+//                if (absgamma == 0) gammascale = 0.0;
+//                par.gamma.set(j,i, gammascale * par.gamma.get(j,i));
+//                gammaNorms += censoredWeights.get(j, i) * absgamma;
+////                gammaNorms += weights.get(j) * absgamma;
+//            }
+//        }
 
         /*
         double gammaNorms = 0;
@@ -1837,13 +1855,15 @@ public class survivalMGM extends ConvexProximal implements GraphSearch{
 //                    }
 //                }
 //                tempVec.viewPart(minIdx, 1).assign(0.0);
-                double etaScale;
-                if (norm2(tempVec)==0) {
-                    etaScale = 0.0;
-                } else {
-                    etaScale = Math.max(0, 1 - censoredWeights.get(p + j, i) * tlam.get(4) / norm2(tempVec));
-                }
-                tempVec.assign(Functions.mult(etaScale));
+//                double etaScale;
+//                if (norm2(tempVec)==0) {
+//                    etaScale = 0.0;
+//                } else {
+//                    etaScale = Math.max(0, 1 - censoredWeights.get(p + j, i) * tlam.get(4) / norm2(tempVec));
+//                }
+//                tempVec.assign(Functions.mult(etaScale));
+//                tempVec.assign(Functions.mult(Math.max(0, 1 - weights.get(p + j) * tlam.get(4) / norm2(tempVec))));
+                tempVec.assign(Functions.mult(Math.max(0, 1 - tlam.get(4) / norm2(tempVec))));
                 etaNorms += norm2(tempVec);
             }
         }

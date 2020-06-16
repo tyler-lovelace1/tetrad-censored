@@ -137,29 +137,56 @@ public class SearchWrappers {
 
     public static class FCIWrapper extends DataGraphSearch{
         public FCIWrapper(double...params){super(params);}
-    public FCIWrapper copy() {return new FCIWrapper(searchParams);};
 
-    public Graph search(DataSet ds)
-    {
-        //System.out.print("Running FCI...");
-        orientations = new HashMap<String,String>();
-        IndependenceTest i =  new IndTestMultinomialAJ(ds,searchParams[0],true);
-        Fci f = new Fci(i);
-        if(initialGraph!=null)
-            f.setInitialGraph(initialGraph);
-        if(knowledge!=null)
-            f.setKnowledge(knowledge);
-       Graph g = f.search();
-        Map<String,String> temp = f.whyOrient;
-        for(String x:temp.keySet())
+        public FCIWrapper copy() {return new FCIWrapper(searchParams);};
+
+        public Graph search(DataSet ds)
         {
-            //TODO make sure that this is ok, for concurrency issues in parallel
-            orientations.put(x,temp.get(x));
+            //System.out.print("Running FCI...");
+            orientations = new HashMap<String,String>();
+            IndependenceTest i =  new IndTestMultinomialAJ(ds,searchParams[0],true);
+            Fci f = new Fci(i);
+            if(initialGraph!=null)
+                f.setInitialGraph(initialGraph);
+            if(knowledge!=null)
+                f.setKnowledge(knowledge);
+            Graph g = f.search();
+            Map<String,String> temp = f.whyOrient;
+            for(String x:temp.keySet())
+            {
+                //TODO make sure that this is ok, for concurrency issues in parallel
+                orientations.put(x,temp.get(x));
+            }
+            return g;
         }
-        return g;
-
     }
-}
+
+    public static class CFCIWrapper extends DataGraphSearch{
+        public CFCIWrapper(double...params){super(params);}
+
+        public CFCIWrapper copy() {return new CFCIWrapper(searchParams);};
+
+        public Graph search(DataSet ds)
+        {
+            System.out.print("Running CFCI...");
+            orientations = new HashMap<String,String>();
+            IndependenceTest i =  new IndTestMultinomialCC(ds,searchParams[0],false);
+            Cfci f = new Cfci(i);
+            if(initialGraph!=null)
+                f.setInitialGraph(initialGraph);
+            if(knowledge!=null)
+                f.setKnowledge(knowledge);
+            Graph g = f.search();
+            Map<String,String> temp = f.whyOrient;
+            for(String x:temp.keySet())
+            {
+                //TODO make sure that this is ok, for concurrency issues in parallel
+                orientations.put(x,temp.get(x));
+            }
+            return g;
+        }
+    }
+
     public static class FCIMAXWrapper extends DataGraphSearch {
         public FCIMAXWrapper(double... params) {
             super(params);
@@ -172,7 +199,7 @@ public class SearchWrappers {
         public Graph search(DataSet ds) {
             //System.out.print("Running FCI-MAX...");
             orientations = new HashMap<String, String>();
-            IndependenceTest i = new IndTestMultinomialQL(ds, searchParams[0],false);
+            IndependenceTest i = new IndTestMultinomialCC(ds, searchParams[0],false);
             FciMaxP f = new FciMaxP(i);
             if(initialGraph!=null)
                 f.setInitialGraph(initialGraph);
@@ -188,6 +215,7 @@ public class SearchWrappers {
 
         }
     }
+
     public static class MGMWrapper extends DataGraphSearch {
         //should be array three parameters for lambdas of each edge type
         public MGMWrapper(double... params) {
@@ -257,6 +285,43 @@ public class SearchWrappers {
                     fg.setKnowledge(knowledge);
                 return fg.search();
             }
+
+        }
+    }
+
+    public static class LiNGWrapper extends DataGraphSearch {
+        public LiNGWrapper(double... params) {
+            super(params);
+        }
+
+        public LiNGWrapper copy() {
+            return new LiNGWrapper(searchParams);
+        }
+
+        public Graph search(DataSet ds) {
+//            System.out.print("Running LiNG...");
+            Ling f = new Ling(ds);
+            f.setThreshold(searchParams[0]);
+
+            Ling.StoredGraphs gs = f.search();
+
+            System.out.println(gs.getNumGraphs() + " possible graphs found");
+
+            int stableGraphs = 0;
+            Graph g = gs.getGraph(0);
+            for (int i = 0; i < gs.getNumGraphs(); i++) {
+                //TODO make sure that this is ok, for concurrency issues in parallel
+                if (gs.isStable(i)) {
+                    stableGraphs++;
+                    if (stableGraphs==1) {
+                        g = gs.getGraph(i);
+                    }
+                }
+            }
+
+            System.out.println(stableGraphs + " stable graphs found");
+
+            return g;
 
         }
     }
