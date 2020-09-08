@@ -44,7 +44,7 @@ public class SearchWrappers {
 
         public Graph search(DataSet ds) {
             //System.out.print("Running PCS...");
-            IndTestMultinomialAJ indTest = new IndTestMultinomialAJ(ds, searchParams[0],true);
+            IndTestMultinomialAJ indTest = new IndTestMultinomialAJ(ds, searchParams[0],false);
             PcStable pcs = new PcStable(indTest);
             if(initialGraph!=null)
                 pcs.setInitialGraph(initialGraph);
@@ -82,7 +82,7 @@ public class SearchWrappers {
         public PcStableWrapper copy(){return new PcStableWrapper(searchParams);}
 
         public Graph search(DataSet ds) {
-            IndTestMultinomialAJ indTest = new IndTestMultinomialAJ(ds, searchParams[0],true);
+            IndTestMultinomialAJ indTest = new IndTestMultinomialAJ(ds, searchParams[0],false);
             CpcStable pcs = new CpcStable(indTest);
             if(initialGraph!=null)
                 pcs.setInitialGraph(initialGraph);
@@ -168,10 +168,12 @@ public class SearchWrappers {
 
         public Graph search(DataSet ds)
         {
-            System.out.print("Running CFCI...");
-            orientations = new HashMap<String,String>();
+//            System.out.print("Running CFCI...");
+            orientations = new HashMap<>();
             IndependenceTest i =  new IndTestMultinomialCC(ds,searchParams[0],false);
             Cfci f = new Cfci(i);
+            // Fixes problems with memory/runtime issues with large, dense graphs
+            f.setCompleteRuleSetUsed(false);
             if(initialGraph!=null)
                 f.setInitialGraph(initialGraph);
             if(knowledge!=null)

@@ -272,9 +272,11 @@ public class IndTestMultinomialAJ implements IndependenceTest {
 
         double chisq = 2*(multiLL(coeffsDep, x, yzList, _rows) - multiLL(coeffsNull, x, zList, _rows));
         int df = variablesPerNode.get(y).size()*variablesPerNode.get(x).size();
-//        System.out.println("chisq: " + chisq);
+//        System.out.println("chisq = " + chisq);
+//        System.out.println("df = " + df);
         if (Double.isNaN(chisq) || chisq < 0) chisq = 0.0;
         double p = 1.0 - new ChiSquaredDistribution(df).cumulativeProbability(chisq);
+//        System.out.println("p-value = " + p);
 
         //double p = 1.0;
 
@@ -288,6 +290,12 @@ public class IndTestMultinomialAJ implements IndependenceTest {
 
         this.lastP = p;
 
+//        if (indep) {
+//            System.out.println(x + " _||_ " + y + " | { " + z + " }");
+//        } else {
+//            System.out.println(x + " _|/_ " + y + " | { " + z + " }");
+//        }
+//
         if (verbose) {
             if (indep) {
                 TetradLogger.getInstance().log("independencies", SearchLogUtils.independenceFactMsg(x, y, z, p));
@@ -451,6 +459,12 @@ public class IndTestMultinomialAJ implements IndependenceTest {
 
         boolean indep = p > alpha;
 
+//        if (indep) {
+//            System.out.println(x + " _||_ " + y + " | { " + z + " }");
+//        } else {
+//            System.out.println(x + " _|/_ " + y + " | { " + z + " }");
+//        }
+//
         if (verbose) {
             if (indep) {
                 TetradLogger.getInstance().log("independencies", SearchLogUtils.independenceFactMsg(x, y, z, p));
@@ -486,7 +500,7 @@ public class IndTestMultinomialAJ implements IndependenceTest {
             yzList.add(internalData.getVariable(y.getName()));
         }
 
-        System.out.println("y: " + yzList);
+//        System.out.println("y: " + yzList);
 
         for (Node _z : z) {
 //            if (_z instanceof CensoredVariable) continue;
@@ -495,7 +509,7 @@ public class IndTestMultinomialAJ implements IndependenceTest {
         }
 
         int[] _rows = getNonMissingRows(x, y, z);
-        System.out.println("complete samples: " + _rows.length);
+//        System.out.println("complete samples: " + _rows.length);
 //        coxRegression.setRows(_rows);
 
         CoxRegressionResult result;
@@ -519,7 +533,7 @@ public class IndTestMultinomialAJ implements IndependenceTest {
 
             double ll = result.getLoglikelihood();
             double ll0 = result0.getLoglikelihood();
-            System.out.println("likelihood ratio: " + (ll - ll0));
+//            System.out.println("likelihood ratio: " + (ll - ll0));
             p -= new ChiSquaredDistribution(variablesPerNode.get(y).size()).cumulativeProbability(2 * (ll - ll0));
         }
         else p = result.getP()[0];
@@ -529,8 +543,8 @@ public class IndTestMultinomialAJ implements IndependenceTest {
         boolean indep = p > alpha;
 
 //        System.out.println("likelihood ratio: " + 2 * (ll - ll0));
-        System.out.println("p-value: " + p);
-        System.out.println(x.getName() + " and " + y.getName() + " are independent given " + z + ": " + indep);
+//        System.out.println("p-value: " + p);
+//        System.out.println(x.getName() + " and " + y.getName() + " are independent given " + z + ": " + indep);
 
         if (verbose) {
             if (indep) {

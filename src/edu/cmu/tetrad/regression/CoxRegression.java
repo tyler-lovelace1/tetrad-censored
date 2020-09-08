@@ -112,7 +112,7 @@ public class CoxRegression implements TetradSerializable {
      * @return the regression plane.
      */
     public CoxRegressionResult regress(CensoredVariable target, List<Node> regressors, int[] _rows) {
-        System.out.println("fitting " + target.getName());
+//        System.out.println("fitting " + target.getName());
 
         DoubleMatrix2D X;
         CensoredVariable _target;
@@ -120,13 +120,13 @@ public class CoxRegression implements TetradSerializable {
         List<Node> tempList = new ArrayList<Node>();
         String[] regressorNames = new String[regressors.size()];
 
-        System.out.println("Regressors:");
+//        System.out.println("Regressors:");
         for (int i = 0; i < regressors.size(); i++) {
             tempList.add(regressors.get(i));
             regressorNames[i] = regressors.get(i).getName();
-            System.out.print(regressorNames[i] + ", ");
+//            System.out.print(regressorNames[i] + ", ");
         }
-        System.out.println();
+//        System.out.println();
 
 //        double[] _time;
 
@@ -188,7 +188,7 @@ public class CoxRegression implements TetradSerializable {
 //        for (int idx :  target.getOrder()) System.out.print(idx + " ");
 //        System.out.println("H: ");
 //        for (int idx :  target.getH()) System.out.print(idx + " ");
-        System.out.println("initial loss: " + new_l);
+//        System.out.println("initial loss: " + new_l);
 
         while (Math.abs(old_l - new_l) > 1e-5) {
             old_l = new_l;
@@ -221,10 +221,10 @@ public class CoxRegression implements TetradSerializable {
             }
 
             beta.assign(p, Functions.plusMult(a));
-            System.out.println("\tloss: " + new_l);
+//            System.out.println("\tloss: " + new_l);
         }
 
-        System.out.println("final loss: " + new_l);
+//        System.out.println("final loss: " + new_l);
 
         hess = factory2D.make(beta.size(), beta.size(), 0.0);
         grad = factory1D.make(beta.size(), 0.0);

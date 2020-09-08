@@ -679,7 +679,8 @@ public class runAlgorithms {
 
                 //Run any algorithm that isn't FGES
                 if(!alg.equals("None") && !alg.equals("FGES")) {
-                    System.out.print("Running " + alg + "...");
+                    System.out.println("Running " + alg + "...");
+                    System.out.println("Maximum Heap Space: " + Runtime.getRuntime().maxMemory());
                     DataGraphSearch gs = Algorithm.algToSearchWrapper(convert(alg), new double[]{alpha});
                     if(g!=null) {
                         if (d.isCensored()) {

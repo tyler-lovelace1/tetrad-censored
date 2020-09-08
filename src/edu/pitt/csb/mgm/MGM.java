@@ -1133,7 +1133,7 @@ public class MGM extends ConvexProximal implements GraphSearch{
 //                System.out.println("retrying");
 //            }
 //        }
-        System.out.println(params);
+//        System.out.println(params);
     }
 
     /**
@@ -1161,7 +1161,7 @@ public class MGM extends ConvexProximal implements GraphSearch{
 //            }
 //        }
 
-        System.out.println(params);
+//        System.out.println(params);
         timePerIter = pg.timePerIter;
         iterCount = pg.iterComplete;
 

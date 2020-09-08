@@ -485,7 +485,7 @@ public class IndTestMultinomialCC implements IndependenceTest {
             yzList.add(internalData.getVariable(y.getName()));
         }
 
-        System.out.println("y: " + yzList);
+//        System.out.println("y: " + yzList);
 
         for (Node _z : z) {
 //            if (_z instanceof CensoredVariable) continue;
@@ -494,7 +494,7 @@ public class IndTestMultinomialCC implements IndependenceTest {
         }
 
         int[] _rows = getNonMissingRows(x, y, z);
-        System.out.println("complete samples: " + _rows.length);
+//        System.out.println("complete samples: " + _rows.length);
 //        coxRegression.setRows(_rows);
 
         CoxRegressionResult result;
@@ -518,7 +518,7 @@ public class IndTestMultinomialCC implements IndependenceTest {
 
             double ll = result.getLoglikelihood();
             double ll0 = result0.getLoglikelihood();
-            System.out.println("likelihood ratio: " + (ll - ll0));
+//            System.out.println("likelihood ratio: " + (ll - ll0));
             p -= new ChiSquaredDistribution(variablesPerNode.get(y).size()).cumulativeProbability(2 * (ll - ll0));
         }
         else p = result.getP()[0];
@@ -528,8 +528,8 @@ public class IndTestMultinomialCC implements IndependenceTest {
         boolean indep = p > alpha;
 
 //        System.out.println("likelihood ratio: " + 2 * (ll - ll0));
-        System.out.println("p-value: " + p);
-        System.out.println(x.getName() + " and " + y.getName() + " are independent given " + z + ": " + indep);
+//        System.out.println("p-value: " + p);
+//        System.out.println(x.getName() + " and " + y.getName() + " are independent given " + z + ": " + indep);
 
         if (verbose) {
             if (indep) {

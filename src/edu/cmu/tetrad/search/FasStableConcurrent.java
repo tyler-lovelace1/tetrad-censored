@@ -95,12 +95,17 @@ public class FasStableConcurrent implements IFas {
     private boolean verbose = false;
 
     // The concurrency pool.
-    private ForkJoinPool pool = ForkJoinPoolInstance.getInstance().getPool();
+    private ForkJoinPool pool = new ForkJoinPool();
+//    private ForkJoinPool pool = ForkJoinPoolInstance.getInstance().getPool();
 
     /**
      * Where verbose output is sent.
      */
     private PrintStream out = System.out;
+
+    private int parallelism = Runtime.getRuntime().availableProcessors();
+
+    private double factor = 1.25;
 
     private int chunk = 100;
 
@@ -137,6 +142,7 @@ public class FasStableConcurrent implements IFas {
      */
     public Graph search() {
         this.logger.log("info", "Starting Fast Adjacency Search.");
+        long beginTime = System.currentTimeMillis();
 
         // The search graph. It is assumed going in that all of the true adjacencies of x are in this graph for every node
         // x. It is hoped (i.e. true in the large sample limit) that true adjacencies are never removed.
@@ -199,6 +205,8 @@ public class FasStableConcurrent implements IFas {
             this.logger.log("info", "Finishing Fast Adjacency Search.");
         }
 
+        long endTime = System.currentTimeMillis();
+        System.out.println("FAS ELAPSED TIME: " + (endTime - beginTime)/1000 + "s");
         return graph;
     }
 
@@ -261,6 +269,11 @@ public class FasStableConcurrent implements IFas {
 
         final List<Node> empty = Collections.emptyList();
 
+        System.out.println("Depth 0:");
+//        System.out.println(nodes.size());
+
+        chunk = (int) Math.floor((nodes.size() / parallelism) * factor);
+
         class Depth0Task extends RecursiveTask<Boolean> {
             private int chunk;
             private int from;
@@ -275,6 +288,7 @@ public class FasStableConcurrent implements IFas {
             @Override
             protected Boolean compute() {
                 if (to - from <= chunk) {
+                    System.out.println(Thread.currentThread().getName() + ": " + (to-from) + " / " + chunk);
                     for (int i = from; i < to; i++) {
                         if (verbose) {
                             if ((i + 1) % 1000 == 0) System.out.println("i = " + (i + 1));
@@ -323,6 +337,8 @@ public class FasStableConcurrent implements IFas {
                                 adjacencies.get(x).add(y);
                                 adjacencies.get(y).add(x);
 
+                                System.out.println("Removed:\t" + x + ", " + y);
+
 //                                if (verbose) {
 //                                    TetradLogger.getInstance().log("dependencies", SearchLogUtils.independenceFact(x, y, empty) + " p = " +
 //                                            nf.format(test.getPValue()));
@@ -330,17 +346,23 @@ public class FasStableConcurrent implements IFas {
                             }
                         }
                     }
-
+                    System.out.println(Thread.currentThread().getName() + ": Finished");
                     return true;
                 } else {
                     final int mid = (to + from) / 2;
 
-                    Depth0Task left = new Depth0Task(chunk, from, mid);
-                    Depth0Task right = new Depth0Task(chunk, mid, to);
+                    List<Depth0Task> tasks = new ArrayList<>();
 
-                    left.fork();
-                    right.compute();
-                    left.join();
+                    tasks.add(new Depth0Task(chunk, from, mid));
+                    tasks.add(new Depth0Task(chunk, mid, to));
+                    invokeAll(tasks);
+
+//                    Depth0Task left = new Depth0Task(chunk, from, mid);
+//                    Depth0Task right = new Depth0Task(chunk, mid, to);
+//
+//                    left.fork();
+//                    right.compute();
+//                    left.join();
 
                     return true;
                 }
@@ -409,10 +431,30 @@ public class FasStableConcurrent implements IFas {
         }
 
         final Map<Node, Set<Node>> adjacenciesCopy = new HashMap<>();
-
+        final Map<Node, Integer> testCounts = new HashMap<>();
+        int sum = 0;
+        int remainingNodes = 0;
+        int testSum;
         for (Node node : adjacencies.keySet()) {
             adjacenciesCopy.put(node, new HashSet<>(adjacencies.get(node)));
+            Set<Node> adj = adjacencies.get(node);
+            if (adj.size() >= depth) {
+                remainingNodes += 1;
+            }
+            testSum = choose(adj.size(), depth);
+//            for (Node neigh : adj) {
+//                testSum += choose(adjacencies.get(neigh).size(), depth);
+//            }
+            testCounts.put(node, testSum);
+//            sum += adjacencies.get(node).size();
+            sum += testSum;
         }
+
+//        sum = Math.max(sum, nodes.size());
+
+        System.out.println("Depth " + depth + ":");
+        System.out.println(sum);
+        chunk = (int) Math.ceil(sum / (double) Math.min(parallelism, remainingNodes) * factor);
 
         class DepthTask extends RecursiveTask<Boolean> {
             private int chunk;
@@ -427,7 +469,13 @@ public class FasStableConcurrent implements IFas {
 
             @Override
             protected Boolean compute() {
-                if (to - from <= chunk) {
+                long testEdges = 0;
+                for (int i = from; i < to; i++) {
+                    testEdges += testCounts.get(nodes.get(i));
+                }
+
+                if (to - from <= 2 || testEdges <= chunk) {
+                    System.out.println(Thread.currentThread().getName() + ": " + testEdges + " / " + chunk);
                     for (int i = from; i < to; i++) {
                         if (verbose) {
                             if ((i + 1) % 1000 == 0) System.out.println("i = " + (i + 1));
@@ -488,16 +536,23 @@ public class FasStableConcurrent implements IFas {
                         }
                     }
 
+                    System.out.println(Thread.currentThread().getName() + ": Finished");
                     return true;
                 } else {
                     final int mid = (to + from) / 2;
 
-                    DepthTask left = new DepthTask(chunk, from, mid);
-                    DepthTask right = new DepthTask(chunk, mid, to);
+                    List<DepthTask> tasks = new ArrayList<>();
 
-                    left.fork();
-                    right.compute();
-                    left.join();
+                    tasks.add(new DepthTask(chunk, from, mid));
+                    tasks.add(new DepthTask(chunk, mid, to));
+                    invokeAll(tasks);
+
+//                    DepthTask left = new DepthTask(chunk, from, mid);
+//                    DepthTask right = new DepthTask(chunk, mid, to);
+//
+//                    left.fork();
+//                    right.compute();
+//                    left.join();
 
                     return true;
                 }
@@ -510,7 +565,13 @@ public class FasStableConcurrent implements IFas {
             System.out.println("Done with depth");
         }
 
-        return freeDegree(nodes, adjacencies) > depth;
+        boolean retVal = freeDegree(nodes, adjacencies) > depth;
+
+        if (!retVal) {
+            pool.shutdown();
+        }
+
+        return retVal;
     }
 
     private List<Node> possibleParents(Node x, List<Node> adjx,
@@ -607,6 +668,19 @@ public class FasStableConcurrent implements IFas {
 
     public void setRecordSepsets(boolean recordSepsets) {
         this.recordSepsets = recordSepsets;
+    }
+
+    private int choose(int N, int K) {
+        if (K > N) {
+            return 0;
+        } else if (K == N) {
+            return 1;
+        }
+        int val = 1;
+        for (int k = 0; k < K; k++) {
+            val *= (N-k)/(k+1);
+        }
+        return val;
     }
 
 }

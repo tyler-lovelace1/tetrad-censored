@@ -29,6 +29,7 @@ import edu.cmu.tetrad.graph.Node;
 import edu.cmu.tetrad.util.ChoiceGenerator;
 import edu.cmu.tetrad.util.TetradLogger;
 
+import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -266,6 +267,10 @@ public final class FciOrient {
                 }
             }
         }
+
+        out.println("rule R0");
+        out.println(graph);
+
     }
 
     private void printWrongColliderMessage(Node a, Node b, Node c, String location, Graph graph) {
@@ -379,6 +384,9 @@ public final class FciOrient {
                 ruleR2(C, B, A, graph);
             }
         }
+
+        out.println("rule R1R2 cycle");
+        out.println(graph);
     }
 
     /// R1, away from collider
@@ -535,6 +543,9 @@ public final class FciOrient {
                 }
             }
         }
+
+        out.println("rule R3");
+        out.println(graph);
     }
 
 //    public void ruleR4(Graph graph) {
@@ -745,6 +756,9 @@ public final class FciOrient {
                 }
             }
         }
+
+        out.println("rule R4");
+        out.println(graph);
     }
 
     /**
@@ -978,6 +992,9 @@ public final class FciOrient {
                 }
             }
         }
+
+        out.println("rule R5");
+        out.println(graph);
     }
 
     /**
@@ -1035,6 +1052,10 @@ public final class FciOrient {
 
             }
         }
+
+        out.println("rule R6R7");
+        out.println(graph);
+
     }
 
     /**
@@ -1064,6 +1085,9 @@ public final class FciOrient {
                 }
             }
         }
+
+        out.println("rule R8R9R10");
+        out.println(graph);
 
     }
 
@@ -1109,6 +1133,161 @@ public final class FciOrient {
         for (Node curr : adjacencies) {
             getUcPdPsHelper(curr, soFar, n2, ucPdPaths, graph);
         }
+
+        System.out.println("Recursive");
+        for (List<Node> path : ucPdPaths) {
+            System.out.println(path);
+        }
+
+        return ucPdPaths;
+    }
+
+    /**
+     * Gets a list of every uncovered partially directed path between two nodes
+     * in the graph. Based on Breadth First Search.
+     * <p>
+     * Iterative implementation instead of recursive to avoid memory issues on large
+     * graphs with many partially directed paths
+     *
+     * @param n1 The beginning node of the undirectedPaths.
+     * @param n2 The ending node of the undirectedPaths.
+     * @return A list of uncovered partially directed undirectedPaths from n1 to
+     * n2.
+     */
+    private List<List<Node>> getUcPdPathsI(Node n1, Node n2, Graph graph) {
+        List<List<Node>> ucPdPaths = new LinkedList<>();
+        LinkedList<Node> queue = new LinkedList<>();
+        LinkedList<List<Node>> pathQueue = new LinkedList<>();
+
+        queue.add(n1);
+
+        List<Node> soFar = new LinkedList<>();
+        soFar.add(n1);
+        pathQueue.add(soFar);
+
+        Node prev, prev2;
+        List<Node> adj, temp;
+        while (!queue.isEmpty()) {
+//            System.out.println("pathQueue size: " + pathQueue.size());
+            prev = queue.poll();
+            soFar = pathQueue.poll();
+
+//            System.out.println("previous: " + prev);
+//            System.out.println("path so far: " + soFar);
+
+            adj = graph.getAdjacentNodes(prev);
+            for (Node curr : adj) {
+                if (!soFar.contains(curr)) {
+                    if (graph.getEndpoint(prev, curr) == Endpoint.TAIL
+                            || graph.getEndpoint(curr, prev) == Endpoint.ARROW) {
+                        continue;
+                    } else if(soFar.size() >= 2) {
+                        prev2 = soFar.get(soFar.size()-2);
+                        if (graph.isAdjacentTo(prev2, curr)) {
+                            continue;
+                        }
+                    }
+
+                    temp = new LinkedList<>(soFar);
+                    temp.add(curr);
+
+                    if (curr.equals(n2)) {
+                        ucPdPaths.add(new LinkedList<>(temp));
+                    } else {
+                        queue.add(curr);
+                        pathQueue.add(new LinkedList<>(temp));
+                    }
+                }
+            }
+        }
+
+//        System.out.println("BFS");
+//        for (List<Node> path : ucPdPaths) {
+//            System.out.println(path);
+//        }
+
+        return ucPdPaths;
+    }
+
+    /**
+     * Gets a list of every uncovered partially directed path between two nodes
+     * in the graph. Based on Depth First Search. More memory efficient.
+     * <p>
+     * Iterative implementation instead of recursive to avoid memory issues on large
+     * graphs with many partially directed paths
+     *
+     * @param n1 The beginning node of the undirectedPaths.
+     * @param n2 The ending node of the undirectedPaths.
+     * @return A list of uncovered partially directed undirectedPaths from n1 to
+     * n2.
+     */
+    private List<List<Node>> getUcPdPathsIDFS(Node n1, Node n2, Graph graph) {
+        List<List<Node>> ucPdPaths = new LinkedList<>();
+        Stack<Node> stack = new Stack<>();
+        HashMap<Node, Boolean> inPath = new HashMap<>();
+        HashMap<Node, List<Node>> adjacencies = new HashMap<>();
+        HashMap<Node, Integer> currAdjIdx = new HashMap<>();
+
+        System.out.println("uncovered partially directed paths from " + n1 + " to " + n2);
+
+        for (Node n : graph.getNodes()) {
+            inPath.put(n, false);
+            adjacencies.put(n, graph.getAdjacentNodes(n));
+            currAdjIdx.put(n, 0);
+        }
+
+        stack.push(n1);
+        inPath.replace(n1, true);
+
+        while (!stack.empty()) {
+//            System.out.println("path so far: " + stack);
+//            System.out.println("full paths: " + ucPdPaths);
+            Node curr = stack.pop();
+            inPath.replace(curr, false);
+
+            List<Node> adj = adjacencies.get(curr);
+            for (int adjIdx = currAdjIdx.get(curr); adjIdx < adj.size(); adjIdx++) {
+                Node next = adj.get(adjIdx);
+                if (!inPath.get(next)) {
+                    if (graph.getEndpoint(curr, next) == Endpoint.TAIL
+                            || graph.getEndpoint(next, curr) == Endpoint.ARROW) {
+                        continue;
+                    } else if(stack.size() >= 1) {
+                        Node prev = stack.peek();
+                        if (graph.isAdjacentTo(prev, next)) {
+                            continue;
+                        }
+                    }
+
+                    stack.push(curr);
+                    inPath.replace(curr, true);
+                    currAdjIdx.replace(curr, adjIdx+1);
+                    stack.push(next);
+                    inPath.replace(next, true);
+                    currAdjIdx.replace(next, 0);
+
+                    if (next.equals(n2)) {
+                        ucPdPaths.add(new ArrayList<>(stack));
+                        System.out.println("Path " + ucPdPaths.size() + ": " + stack);
+                        for (int i = 0; i < stack.size()-1; i++) {
+                            System.out.println(graph.getEdge(stack.get(i), stack.get(i+1)));
+                        }
+                        System.out.println();
+                        inPath.replace(stack.pop(), false);
+                        continue;
+                    }
+
+                    break;
+
+                }
+            }
+        }
+
+//        System.out.println("DFS paths from " + n1 + " to " + n2);
+//        for (List<Node> path : ucPdPaths) {
+//            System.out.println(path);
+//        }
+//        System.out.println();
 
         return ucPdPaths;
     }
@@ -1173,7 +1352,9 @@ public final class FciOrient {
      */
     private List<List<Node>> getUcCirclePaths(Node n1, Node n2, Graph graph) {
         List<List<Node>> ucCirclePaths = new LinkedList<List<Node>>();
-        List<List<Node>> ucPdPaths = getUcPdPaths(n1, n2, graph);
+//        List<List<Node>> ucPdPaths = getUcPdPaths(n1, n2, graph);
+//        List<List<Node>> ucPdPaths = getUcPdPathsI(n1, n2, graph);
+        List<List<Node>> ucPdPaths = getUcPdPathsIDFS(n1, n2, graph);
 
         for (List<Node> path : ucPdPaths) {
             for (int i = 0; i < path.size() - 1; i++) {
@@ -1260,7 +1441,9 @@ public final class FciOrient {
      * @return Whether or not R9 was succesfully applied.
      */
     private boolean ruleR9(Node a, Node c, Graph graph) {
-        List<List<Node>> ucPdPsToC = getUcPdPaths(a, c, graph);
+//        List<List<Node>> ucPdPsToC = getUcPdPaths(a, c, graph);
+//        List<List<Node>> ucPdPsToC = getUcPdPathsI(a, c, graph);
+        List<List<Node>> ucPdPsToC = getUcPdPathsIDFS(a, c, graph);
 
         for (List<Node> u : ucPdPsToC) {
             Node b = u.get(1);
@@ -1319,8 +1502,12 @@ public final class FciOrient {
                 }
                 // We know Ao->C and B-->C<--D.
 
-                List<List<Node>> ucPdPsToB = getUcPdPaths(a, b, graph);
-                List<List<Node>> ucPdPsToD = getUcPdPaths(a, d, graph);
+//                List<List<Node>> ucPdPsToB = getUcPdPaths(a, b, graph);
+//                List<List<Node>> ucPdPsToB = getUcPdPathsI(a, b, graph);
+                List<List<Node>> ucPdPsToB = getUcPdPathsIDFS(a, b, graph);
+//                List<List<Node>> ucPdPsToD = getUcPdPaths(a, d, graph);
+//                List<List<Node>> ucPdPsToD = getUcPdPathsI(a, d, graph);
+                List<List<Node>> ucPdPsToD = getUcPdPathsIDFS(a, d, graph);
                 for (List<Node> u1 : ucPdPsToB) {
                     Node m = u1.get(1);
                     for (List<Node> u2 : ucPdPsToD) {

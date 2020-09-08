@@ -217,7 +217,17 @@ public final class CpcStable implements GraphSearch {
         graph = initialGraph;
        // graph = new EdgeListGraphSingleConnections(nodes);
 
+        System.out.println("ConsumerProducer FAS:");
+        final FasStableConsumerProducer fascp = new FasStableConsumerProducer(getIndependenceTest());
+        fascp.setOut(out);
+        fascp.setInitialGraph(initialGraph);
+        fascp.setKnowledge(getKnowledge());
+        fascp.setDepth(getDepth());
+        fascp.setVerbose(verbose);
+        Graph testGraph = fascp.search();
+        System.out.println(testGraph);
 
+        System.out.println("ForkJoin FAS:");
         final FasStableConcurrent fas = new FasStableConcurrent(getIndependenceTest());
         fas.setOut(out);
         fas.setInitialGraph(initialGraph);
@@ -253,6 +263,7 @@ public final class CpcStable implements GraphSearch {
         // on purpose; it is not used in this search.
         graph = fas.search();
         sepsets = fas.getSepsets();
+        System.out.println(graph);
 
 //        for (int i = 0; i < nodes.size(); i++) {
 //            for (int j = i+1; j < nodes.size(); j++) {

@@ -134,7 +134,7 @@ public class FciMaxP {
             if (independenceTest == null || knowledge == null) {
                 throw new NullPointerException();
             }
-this.factor = factor;
+            this.factor = factor;
             this.parallelism = parallelism;
             this.independenceTest = independenceTest;
             this.variables.addAll(independenceTest.getVariables());

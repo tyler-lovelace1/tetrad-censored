@@ -57,6 +57,11 @@ public final class Cfci implements GraphSearch {
     private SepsetMap sepsets = new SepsetMap();
 
     /**
+     * Conservative Sepset Producer
+     */
+    private SepsetProducer csp;
+
+    /**
      * The background knowledge.
      */
     private IKnowledge knowledge = new Knowledge2();
@@ -185,7 +190,7 @@ public final class Cfci implements GraphSearch {
         }
 //        // Step FCI B.  (Zhang's step F2.)
 
-        FasStableConcurrent adj = new FasStableConcurrent(graph, independenceTest);
+        FasStableConsumerProducer adj = new FasStableConsumerProducer(graph, independenceTest);
         adj.setKnowledge(getKnowledge());
         adj.setDepth(depth);
         adj.setVerbose(verbose);
@@ -194,10 +199,13 @@ public final class Cfci implements GraphSearch {
 
         // Note we don't use the sepsets from this search.
 
+        this.csp = new SepsetsConservativeMajorityConcurrent(graph, independenceTest, new SepsetMap(), depth);
+
         // Optional step: Possible Dsep. (Needed for correctness but very time consuming.)
         if (isPossibleDsepSearchDone()) {
             long time1 = System.currentTimeMillis();
-            ruleR0(independenceTest, depth, sepsets);
+            ruleR0(sepsets);
+//            ruleR0(independenceTest, depth, sepsets);
 
             long time2 = System.currentTimeMillis();
 
@@ -208,7 +216,7 @@ public final class Cfci implements GraphSearch {
             // Step FCI D.
             long time3 = System.currentTimeMillis();
 
-            PossibleDsepFci possibleDSep = new PossibleDsepFci(graph, independenceTest);
+            PossibleDsepFciConcurrent possibleDSep = new PossibleDsepFciConcurrent(graph, independenceTest);
             possibleDSep.setDepth(getDepth());
             possibleDSep.setKnowledge(getKnowledge());
             possibleDSep.setMaxPathLength(getMaxReachablePathLength());
@@ -228,7 +236,8 @@ public final class Cfci implements GraphSearch {
         // Step CI C (Zhang's step F3.)
         long time5 = System.currentTimeMillis();
         fciOrientbk(getKnowledge(), graph, variables);
-        ruleR0(independenceTest, depth, sepsets);
+        ruleR0(sepsets);
+//        ruleR0(independenceTest, depth, sepsets);
 
         long time6 = System.currentTimeMillis();
 
@@ -238,8 +247,7 @@ public final class Cfci implements GraphSearch {
 
         // Step CI D. (Zhang's step F4.)
 
-        final FciOrient fciOrient = new FciOrient(new SepsetsConservative(graph, independenceTest,
-                new SepsetMap(), depth), whyOrient);
+        final FciOrient fciOrient = new FciOrient(csp, whyOrient);
 
         fciOrient.setCompleteRuleSetUsed(completeRuleSetUsed);
         fciOrient.setMaxPathLength(-1);
@@ -249,6 +257,8 @@ public final class Cfci implements GraphSearch {
 
         long endTime = System.currentTimeMillis();
         this.elapsedTime = endTime - beginTime;
+
+        System.out.println("CFCI ELAPSED TIME: " + this.elapsedTime/1000 + "s");
 
         if (verbose) {
             logger.log("graph", "Returning graph: " + graph);
@@ -370,6 +380,69 @@ public final class Cfci implements GraphSearch {
         }
     }
 
+    private void ruleR0(SepsetMap sepsets) {
+        if (verbose) {
+            TetradLogger.getInstance().log("info", "Starting Collider Orientation:");
+        }
+
+        colliderTriples = new HashSet<>();
+        noncolliderTriples = new HashSet<>();
+        ambiguousTriples = new HashSet<>();
+
+        for (Node y : getGraph().getNodes()) {
+            List<Node> adjacentNodes = getGraph().getAdjacentNodes(y);
+
+            if (adjacentNodes.size() < 2) {
+                continue;
+            }
+
+            ChoiceGenerator cg = new ChoiceGenerator(adjacentNodes.size(), 2);
+            int[] combination;
+
+            while ((combination = cg.next()) != null) {
+                Node x = adjacentNodes.get(combination[0]);
+                Node z = adjacentNodes.get(combination[1]);
+
+                if (this.getGraph().isAdjacentTo(x, z)) {
+                    continue;
+                }
+
+                TripleType type = getTripleType(x, y, z);
+                List<Node> sepset = sepsets.get(x, z);
+
+                if (type == TripleType.COLLIDER || (sepset != null && !sepset.contains(y))) {
+                    if (isArrowpointAllowed(x, y) &&
+                            isArrowpointAllowed(z, y)) {
+                        getGraph().setEndpoint(x, y, Endpoint.ARROW);
+                        getGraph().setEndpoint(z, y, Endpoint.ARROW);
+
+                        if (verbose) {
+                            TetradLogger.getInstance().log("tripleClassifications", "Collider: " + Triple.pathString(graph, x, y, z));
+                        }
+                    }
+
+                    colliderTriples.add(new Triple(x, y, z));
+                } else if (type == TripleType.NONCOLLIDER ||  (sepset != null && sepset.contains(y))) {
+                    noncolliderTriples.add(new Triple(x, y, z));
+                    if (verbose) {
+                        TetradLogger.getInstance().log("tripleClassifications", "Noncollider: " + Triple.pathString(graph, x, y, z));
+                    }
+                } else {
+                    Triple triple = new Triple(x, y, z);
+                    ambiguousTriples.add(triple);
+                    getGraph().addAmbiguousTriple(triple.getX(), triple.getY(), triple.getZ());
+                    if (verbose) {
+                        TetradLogger.getInstance().log("tripleClassifications", "AmbiguousTriples: " + Triple.pathString(graph, x, y, z));
+                    }
+                }
+            }
+        }
+
+        if (verbose) {
+            TetradLogger.getInstance().log("info", "Finishing Collider Orientation.");
+        }
+    }
+
     /**
      * Helper method. Appears to check if an arrowpoint is permitted by background knowledge.
      *
@@ -395,6 +468,19 @@ public final class Cfci implements GraphSearch {
         }
 
         return graph.getEndpoint(y, x) == Endpoint.CIRCLE;
+    }
+
+    private TripleType getTripleType(Node x, Node y, Node z) {
+        boolean existsSepsetContainingY = csp.isCollider(x, y, z);
+        boolean existsSepsetNotContainingY = csp.isNoncollider(x, y, z);
+
+        if (existsSepsetContainingY == existsSepsetNotContainingY) {
+            return TripleType.AMBIGUOUS;
+        } else if (!existsSepsetNotContainingY) {
+            return TripleType.NONCOLLIDER;
+        } else {
+            return TripleType.COLLIDER;
+        }
     }
 
     private TripleType getTripleType(Node x, Node y, Node z,
