@@ -189,6 +189,34 @@ public class SearchWrappers {
         }
     }
 
+    public static class FCI50Wrapper extends DataGraphSearch{
+        public FCI50Wrapper(double...params){super(params);}
+
+        public FCI50Wrapper copy() {return new FCI50Wrapper(searchParams);};
+
+        public Graph search(DataSet ds)
+        {
+            System.out.print("Running FCI50...");
+            orientations = new HashMap<>();
+            IndependenceTest i =  new IndTestMultinomialCC(ds,searchParams[0],false);
+            Fci50 f = new Fci50(i);
+            // Fixes problems with memory/runtime issues with large, dense graphs
+            f.setCompleteRuleSetUsed(false);
+            if(initialGraph!=null)
+                f.setInitialGraph(initialGraph);
+            if(knowledge!=null)
+                f.setKnowledge(knowledge);
+            Graph g = f.search();
+            Map<String,String> temp = f.whyOrient;
+            for(String x:temp.keySet())
+            {
+                //TODO make sure that this is ok, for concurrency issues in parallel
+                orientations.put(x,temp.get(x));
+            }
+            return g;
+        }
+    }
+
     public static class FCIMAXWrapper extends DataGraphSearch {
         public FCIMAXWrapper(double... params) {
             super(params);

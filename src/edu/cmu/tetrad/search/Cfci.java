@@ -199,7 +199,7 @@ public final class Cfci implements GraphSearch {
 
         // Note we don't use the sepsets from this search.
 
-        this.csp = new SepsetsConservativeMajorityConcurrent(graph, independenceTest, new SepsetMap(), depth);
+        this.csp = new SepsetsConservativeConcurrent(graph, independenceTest, new SepsetMap(), depth);
 
         // Optional step: Possible Dsep. (Needed for correctness but very time consuming.)
         if (isPossibleDsepSearchDone()) {

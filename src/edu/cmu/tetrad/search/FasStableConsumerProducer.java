@@ -21,11 +21,13 @@ package edu.cmu.tetrad.search;
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA //
 ///////////////////////////////////////////////////////////////////////////////
 
+import edu.cmu.tetrad.data.ContinuousVariable;
 import edu.cmu.tetrad.data.IKnowledge;
 import edu.cmu.tetrad.data.Knowledge2;
 import edu.cmu.tetrad.graph.*;
 import edu.cmu.tetrad.util.ChoiceGenerator;
 import edu.cmu.tetrad.util.TetradLogger;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.PrintStream;
 import java.text.DecimalFormat;
@@ -107,18 +109,6 @@ public class FasStableConsumerProducer implements IFas {
     private int chunk = 100;
 
     private boolean recordSepsets = true;
-
-    class IndependenceTask {
-        public Node x;
-        public Node y;
-        public List<Node> z;
-
-        public IndependenceTask(Node x, Node y, List<Node> z) {
-            this.x = x;
-            this.y = y;
-            this.z = z;
-        }
-    }
 
     //==========================CONSTRUCTORS=============================//
 
@@ -274,9 +264,41 @@ public class FasStableConsumerProducer implements IFas {
 
     //==============================PRIVATE METHODS======================/
 
+    class IndependenceTask {
+        public Node x;
+        public Node y;
+        public List<Node> z;
+
+        public IndependenceTask(Node x, Node y, List<Node> z) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null) {
+                return false;
+            } else if (!(o instanceof IndependenceTask)) {
+                return false;
+            } else if ( ((IndependenceTask) o).x != this.x) {
+                return false;
+            } else if ( ((IndependenceTask) o).y != this.y) {
+                return false;
+            } else if ( ((IndependenceTask) o).z != this.z) {
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("(" + x + ", " + y + ") | " + z);
+        }
+    }
+
     private class Broker {
-        public ArrayBlockingQueue<IndependenceTask> queue = new ArrayBlockingQueue<>(10000);
-        public boolean stillProducing = true;
+        public ArrayBlockingQueue<IndependenceTask> queue = new ArrayBlockingQueue<>(1000000);
 
         public void put(IndependenceTask task) throws InterruptedException {
             queue.put(task);
@@ -290,14 +312,17 @@ public class FasStableConsumerProducer implements IFas {
     private class ProducerDepth0 implements Runnable {
         private Broker broker;
         private List<Node> nodes;
+        private IndependenceTask poisonPill;
 
-        public ProducerDepth0(Broker broker, final List<Node> nodes) {
+        public ProducerDepth0(Broker broker, final List<Node> nodes, final IndependenceTask poisonPill) {
             this.broker = broker;
             this.nodes = nodes;
+            this.poisonPill = poisonPill;
         }
 
         @Override
         public void run() {
+            System.out.println("\t" + Thread.currentThread().getName() + ": ProducerDepth0 Start");
             try {
                 final List<Node> empty = Collections.emptyList();
                 for (int i = 0; i < nodes.size(); i++) {
@@ -321,7 +346,9 @@ public class FasStableConsumerProducer implements IFas {
                         broker.put(new IndependenceTask(x, y, empty));
                     }
                 }
-                broker.stillProducing = false;
+                broker.put(poisonPill);
+                broker.put(poisonPill);
+                System.out.println("\t" + Thread.currentThread().getName() + ": ProducerDepth0 Finish");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -333,21 +360,30 @@ public class FasStableConsumerProducer implements IFas {
         private List<Node> nodes;
         private IndependenceTest test;
         private Map<Node, Set<Node>> adjacencies;
+        private IndependenceTask poisonPill;
 
-        public ConsumerDepth0(Broker broker, final List<Node> nodes, final IndependenceTest test, final Map<Node, Set<Node>> adjacencies) {
+        public ConsumerDepth0(Broker broker, final List<Node> nodes, final IndependenceTest test,
+                              final Map<Node, Set<Node>> adjacencies, final IndependenceTask poisonPill) {
             this.broker = broker;
             this.nodes = nodes;
             this.test = test;
             this.adjacencies = adjacencies;
+            this.poisonPill = poisonPill;
         }
 
         @Override
         public void run() {
+            System.out.println("\t" + Thread.currentThread().getName() + ": ConsumerDepth0 Start");
             try {
                 boolean independent;
                 IndependenceTask task = broker.get();
 
-                while (broker.stillProducing || task != null) {
+                while (task != poisonPill) {
+
+                    if (task == null) {
+                        task = broker.get();
+                        continue;
+                    }
 
 //                    System.out.println("Test for " + task.x + " _||_ " + task.y);
 
@@ -385,6 +421,9 @@ public class FasStableConsumerProducer implements IFas {
 
                     task = broker.get();
                 }
+                broker.put(poisonPill);
+                broker.put(poisonPill);
+                System.out.println("\t" + Thread.currentThread().getName() + ": ConsumerDepth0 Finish");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -402,10 +441,17 @@ public class FasStableConsumerProducer implements IFas {
 
         System.out.println("Depth 0:");
 
+        Node x = new ContinuousVariable(RandomStringUtils.randomAlphabetic(15));
+        Node y = new ContinuousVariable(RandomStringUtils.randomAlphabetic(15));
+
+        IndependenceTask poisonPill = new IndependenceTask(x, y, new ArrayList<>());
+
+        System.out.println("PoisonPill: " + poisonPill);
+
         try {
-            status.add(executorService.submit(new ProducerDepth0(broker, nodes)));
+            status.add(executorService.submit(new ProducerDepth0(broker, nodes, poisonPill)));
             for (int i = 0; i < parallelism; i++) {
-                status.add(executorService.submit(new ConsumerDepth0(broker, nodes, test, adjacencies)));
+                status.add(executorService.submit(new ConsumerDepth0(broker, nodes, test, adjacencies, poisonPill)));
             }
 
             for (int i = 0; i < parallelism+1; i++) {
@@ -474,16 +520,20 @@ public class FasStableConsumerProducer implements IFas {
         private List<Node> nodes;
         private Map<Node, Set<Node>> adjacenciesCopy;
         private int depth;
+        private IndependenceTask poisonPill;
 
-        public ProducerDepth(Broker broker, final List<Node> nodes, final Map<Node, Set<Node>> adjacenciesCopy, final int depth) {
+        public ProducerDepth(Broker broker, final List<Node> nodes, final Map<Node, Set<Node>> adjacenciesCopy,
+                             final int depth, final IndependenceTask poisonPill) {
             this.broker = broker;
             this.nodes = nodes;
             this.adjacenciesCopy = adjacenciesCopy;
             this.depth = depth;
+            this.poisonPill = poisonPill;
         }
 
         @Override
         public void run() {
+            System.out.println("\t" + Thread.currentThread().getName() + ": ProducerDepth" + depth + " Start");
             try {
                 for (Node x : nodes) {
 
@@ -508,7 +558,9 @@ public class FasStableConsumerProducer implements IFas {
                         }
                     }
                 }
-                broker.stillProducing = false;
+                broker.put(poisonPill);
+                broker.put(poisonPill);
+                System.out.println("\t" + Thread.currentThread().getName() + ": ProducerDepth" + depth + " Finish");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -520,12 +572,15 @@ public class FasStableConsumerProducer implements IFas {
         private List<Node> nodes;
         private IndependenceTest test;
         private Map<Node, Set<Node>> adjacencies;
+        private IndependenceTask poisonPill;
 
-        public ConsumerDepth(Broker broker, final List<Node> nodes, final IndependenceTest test, final Map<Node, Set<Node>> adjacencies) {
+        public ConsumerDepth(Broker broker, final List<Node> nodes, final IndependenceTest test,
+                             final Map<Node, Set<Node>> adjacencies, final IndependenceTask poisonPill) {
             this.broker = broker;
             this.nodes = nodes;
             this.test = test;
             this.adjacencies = adjacencies;
+            this.poisonPill = poisonPill;
         }
 
         @Override
@@ -533,8 +588,20 @@ public class FasStableConsumerProducer implements IFas {
             try {
                 boolean independent;
                 IndependenceTask task = broker.get();
+                int d;
+                if (task != null) {
+                    d = task.z.size();
+                } else {
+                    d = 0;
+                }
+                System.out.println("\t" + Thread.currentThread().getName() + ": ConsumerDepth" + d + " Start");
 
-                while (broker.stillProducing || task != null) {
+                while (task != poisonPill) {
+
+                    if (task == null) {
+                        task = broker.get();
+                        continue;
+                    }
 
 //                    System.out.println("Test for " + task.x + " _||_ " + task.y);
 
@@ -571,6 +638,9 @@ public class FasStableConsumerProducer implements IFas {
                     }
                     task = broker.get();
                 }
+                broker.put(poisonPill);
+                broker.put(poisonPill);
+                System.out.println("\t" + Thread.currentThread().getName() + ": ConsumerDepth" + d + " Finish");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -588,6 +658,12 @@ public class FasStableConsumerProducer implements IFas {
         Broker broker = new Broker();
         List<Future> status = new ArrayList<>();
         final Map<Node, Set<Node>> adjacenciesCopy = new HashMap<>();
+
+        Node x = new ContinuousVariable(RandomStringUtils.randomAlphabetic(15));
+        Node y = new ContinuousVariable(RandomStringUtils.randomAlphabetic(15));
+
+        IndependenceTask poisonPill = new IndependenceTask(x, y, new ArrayList<>());
+
         final Map<Node, Integer> testCounts = new HashMap<>();
         int sum = 0;
 //        int remainingNodes = 0;
@@ -607,11 +683,12 @@ public class FasStableConsumerProducer implements IFas {
 
         System.out.println("Depth " + depth + ":");
         System.out.println("Number of Tests: " + sum);
+        System.out.println("PoisonPill: " + poisonPill);
 
         try {
-            status.add(executorService.submit(new ProducerDepth(broker, nodes, adjacenciesCopy, depth)));
+            status.add(executorService.submit(new ProducerDepth(broker, nodes, adjacenciesCopy, depth, poisonPill)));
             for (int i = 0; i < parallelism; i++) {
-                status.add(executorService.submit(new ConsumerDepth(broker, nodes, test, adjacencies)));
+                status.add(executorService.submit(new ConsumerDepth(broker, nodes, test, adjacencies, poisonPill)));
             }
 
             for (int i = 0; i < parallelism+1; i++) {

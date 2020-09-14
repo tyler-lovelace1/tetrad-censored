@@ -243,19 +243,21 @@ public final class FciOrient {
                     graph.setEndpoint(c, b, Endpoint.ARROW);
 
                     /**FOR ANALYZING CONSISTENCY**/
-                    List<Node> temp = sepsets.getSepset(a,c);
-                    if(temp==null) {
-                        whyOrient.put(a.getName() + "," + b.getName(), "0,null");
-                        whyOrient.put(c.getName() + "," + b.getName(), "0,null");
-                    }
-                    else
-                    {
-                        String x = "0";
-                        for(Node p:temp)
-                            x+=(","+p.getName());
-                        whyOrient.put(a.getName()+","+b.getName(),x);
-                        whyOrient.put(c.getName()+","+b.getName(),x);
-                    }
+                    whyOrient.put(a.getName() + "," + b.getName(), "0");
+                    whyOrient.put(c.getName() + "," + b.getName(), "0");
+//                    List<Node> temp = sepsets.getSepset(a,c);
+//                    if(temp==null) {
+//                        whyOrient.put(a.getName() + "," + b.getName(), "0,null");
+//                        whyOrient.put(c.getName() + "," + b.getName(), "0,null");
+//                    }
+//                    else
+//                    {
+//                        String x = "0";
+//                        for(Node p:temp)
+//                            x+=(","+p.getName());
+//                        whyOrient.put(a.getName()+","+b.getName(),x);
+//                        whyOrient.put(c.getName()+","+b.getName(),x);
+//                    }
                      /****************************/
                     if (verbose) {
                         logger.log("colliderOrientations", SearchLogUtils.colliderOrientedMsg(a, b, c));

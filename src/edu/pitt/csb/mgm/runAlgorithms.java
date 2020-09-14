@@ -358,7 +358,7 @@ public class runAlgorithms {
                 System.out.println("No algorithm specified, and you are not running MGM\nTherefore no method will be run to analyze the data.\n Please use -runMGM to run MGM or -a <Algorithm Name> to run a causal discovery method");
                 System.exit(-1);
             }
-            String [] algos = {"FCI","CFCI","FCI-MAX","PCS","CPC","MAX","FGES","LiNG", "None"};
+            String [] algos = {"FCI","FCI50","CFCI","FCI-MAX","PCS","CPC","MAX","FGES","LiNG", "None"};
             boolean foundAl = false;
             for(String x:algos)
             {
@@ -368,7 +368,7 @@ public class runAlgorithms {
 
             //Ensure that algorithm name is valid
             if(!foundAl)
-                throw new Exception("Unknown Algorithm: " + alg + ", Please use either \"FCI\", \"CFCI\", \"FCI-MAX\", \"PCS\", \"CPC\", \"MAX\", \"FGES\", \"LiNG\" or \"None\" (MGM Only)");
+                throw new Exception("Unknown Algorithm: " + alg + ", Please use either \"FCI\", \"FCI50\", \"CFCI\", \"FCI-MAX\", \"PCS\", \"CPC\", \"MAX\", \"FGES\", \"LiNG\" or \"None\" (MGM Only)");
 
 
             //Workflow for running StEPS to compute optimal Lambda parameters
@@ -683,15 +683,15 @@ public class runAlgorithms {
                     System.out.println("Maximum Heap Space: " + Runtime.getRuntime().maxMemory());
                     DataGraphSearch gs = Algorithm.algToSearchWrapper(convert(alg), new double[]{alpha});
                     if(g!=null) {
-                        if (d.isCensored()) {
-                            g = moralizeCensoredNeighbors(d, g, alpha);
-                        }
+//                        if (d.isCensored()) {
+//                            g = moralizeCensoredNeighbors(d, g, alpha);
+//                        }
                         gs.setInitialGraph(g);
                     } else if(initGraph!=null) {
-                        if (d.isCensored()) {
-                            initGraph = moralizeCensoredNeighbors(d, initGraph, alpha);
-//                            System.out.println(initGraph);
-                        }
+//                        if (d.isCensored()) {
+//                            initGraph = moralizeCensoredNeighbors(d, initGraph, alpha);
+////                            System.out.println(initGraph);
+//                        }
                         gs.setInitialGraph(initGraph);
                     }
                     if(k!=null)
@@ -975,6 +975,10 @@ public class runAlgorithms {
         else if(alg.equals("FCI"))
         {
             a = Algorithm.FCI;
+        }
+        else if(alg.equals("FCI50"))
+        {
+            a = Algorithm.FCI50;
         }
         else if(alg.equals("CFCI"))
         {

@@ -13,6 +13,7 @@ public final class Algorithm implements TetradSerializable {
     static final long serialVersionUID = 23L;
 
     public static final  Algorithm FCI = new Algorithm("FCI");
+    public static final  Algorithm FCI50 = new Algorithm("FCI50");
     public static final  Algorithm CFCI = new Algorithm("CFCI");
     public static final Algorithm MGMFCI = new Algorithm("MGM-FCI");
     public static final Algorithm MGMFCIMAX = new Algorithm("MGM-FCI-MAX");
@@ -51,6 +52,8 @@ public final class Algorithm implements TetradSerializable {
             return new SearchWrappers.CpcStableWrapper(params);
         else if(a==Algorithm.FCI)
             return new SearchWrappers.FCIWrapper(params);
+        else if(a==Algorithm.FCI50)
+            return new SearchWrappers.FCI50Wrapper(params);
         else if(a==Algorithm.CFCI)
             return new SearchWrappers.CFCIWrapper(params);
         else if(a==Algorithm.FCIMAX)
