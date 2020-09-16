@@ -31,6 +31,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 
 /**
  * Created by josephramsey on 3/24/15.
@@ -41,7 +42,8 @@ public class SepsetsMajorityConsumerProducer implements SepsetProducer {
     private final SepsetMap extraSepsets;
     private int depth = 3;
     private boolean verbose = true;
-    private ConcurrentMap<Triple, List<Integer>> tripleMap;
+//    private ConcurrentMap<Triple, List<Integer>> tripleMap;
+    private ConcurrentMap<Triple, AtomicIntegerArray> tripleMap;
     private ConcurrentMap<Set<Node>, List<Node>> maxPSepsetMap;
     private int parallelism;
     private ExecutorService executorService;
@@ -59,7 +61,7 @@ public class SepsetsMajorityConsumerProducer implements SepsetProducer {
         this.tripleMap = new ConcurrentHashMap<>();
         this.executorService = Executors.newFixedThreadPool(parallelism+1);
         System.out.println("Begin concurrent fillSepsetsCountsMap");
-        fillSepsetsCountsMap(this.graph, this.verbose, this.tripleMap);
+        fillSepsetsCountsMap();
         System.out.println("End of concurrent fillSepsetsCountsMap");
     }
 
@@ -126,7 +128,7 @@ public class SepsetsMajorityConsumerProducer implements SepsetProducer {
         if (j.getName()=="survival"){
             System.out.println("checking for collider centered on survival");
         }
-        List<Integer> ret = tripleMap.get(new Triple(i, j, k));
+        AtomicIntegerArray ret = tripleMap.get(new Triple(i, j, k));
         if (j.getName()=="survival"){
             System.out.println("number of sepsets with survival:\t" + ret.get(0));
             System.out.println("number of sepsets without survival:\t" + ret.get(1));
@@ -134,9 +136,9 @@ public class SepsetsMajorityConsumerProducer implements SepsetProducer {
         if (ret == null) {
             System.out.println("unknown triple being requested");
             List<List<List<Node>>> sepsetsLists = getSepsetsLists(i, j, k, independenceTest, depth, true);
-            List<Integer> temp = new ArrayList<>();
-            temp.add(sepsetsLists.get(0).size());
-            temp.add(sepsetsLists.get(1).size());
+            AtomicIntegerArray temp = new AtomicIntegerArray(2);
+            temp.set(0, sepsetsLists.get(0).size());
+            temp.set(1, sepsetsLists.get(1).size());
             tripleMap.put(new Triple(i, j, k), temp);
             ret = temp;
             System.out.println("unknown triple added");
@@ -146,13 +148,13 @@ public class SepsetsMajorityConsumerProducer implements SepsetProducer {
 
     public boolean isNoncollider(Node i, Node j, Node k) {
 //        List<List<List<Node>>> ret = sepsetsListsMap.get(new Triple(i, j, k));
-        List<Integer> ret = tripleMap.get(new Triple(i, j, k));
+        AtomicIntegerArray ret = tripleMap.get(new Triple(i, j, k));
         if (ret == null) {
             System.out.println("unknown triple being requested");
             List<List<List<Node>>> sepsetsLists = getSepsetsLists(i, j, k, independenceTest, depth, true);
-            List<Integer> temp = new ArrayList<>();
-            temp.add(sepsetsLists.get(0).size());
-            temp.add(sepsetsLists.get(1).size());
+            AtomicIntegerArray temp = new AtomicIntegerArray(2);
+            temp.set(0, sepsetsLists.get(0).size());
+            temp.set(1, sepsetsLists.get(1).size());
             tripleMap.put(new Triple(i, j, k), temp);
             ret = temp;
 //            ret = getSepsetsLists(i, j, k, independenceTest, depth, true);
@@ -284,15 +286,10 @@ public class SepsetsMajorityConsumerProducer implements SepsetProducer {
 
     private class SepsetsCountsProducer implements Runnable {
         private Broker broker;
-        private Graph graph;
-        private Map<Triple, List<Integer>> tripleMap;
         private ColliderTask poisonPill;
 
-        public SepsetsCountsProducer(Broker broker, final Graph graph, final Map<Triple, List<Integer>> tripleMap,
-                                     final ColliderTask poisonPill) {
+        public SepsetsCountsProducer(Broker broker, final ColliderTask poisonPill) {
             this.broker = broker;
-            this.graph = graph;
-            this.tripleMap = tripleMap;
             this.poisonPill = poisonPill;
         }
 
@@ -315,11 +312,11 @@ public class SepsetsMajorityConsumerProducer implements SepsetProducer {
                         if (graph.isAdjacentTo(a, c))
                             continue;
 
-                        List<Integer> sepsetCounts = new ArrayList<>();
-                        sepsetCounts.add(0);
-                        sepsetCounts.add(0);
+//                        List<Integer> sepsetCounts = new ArrayList<>();
+//                        sepsetCounts.add(0);
+//                        sepsetCounts.add(0);
                         Triple curTriple = new Triple(a, b, c);
-                        tripleMap.put(curTriple, sepsetCounts);
+//                        tripleMap.put(curTriple, sepsetCounts);
 
                         List<Node> _nodes = graph.getAdjacentNodes(a);
                         _nodes.remove(c);
@@ -377,15 +374,10 @@ public class SepsetsMajorityConsumerProducer implements SepsetProducer {
 
     private class SepsetsCountsConsumer implements Runnable {
         private Broker broker;
-        private boolean verbose;
-        private Map<Triple, List<Integer>> tripleMap;
         private ColliderTask poisonPill;
 
-        public SepsetsCountsConsumer(Broker broker, boolean verbose, final Map<Triple, List<Integer>> tripleMap,
-                                     final ColliderTask poisonPill) {
+        public SepsetsCountsConsumer(Broker broker, final ColliderTask poisonPill) {
             this.broker = broker;
-            this.verbose = verbose;
-            this.tripleMap = tripleMap;
             this.poisonPill = poisonPill;
         }
 
@@ -407,11 +399,15 @@ public class SepsetsMajorityConsumerProducer implements SepsetProducer {
                             System.out.println("Indep: " + task.x + " _||_ " + task.y + " | " + task.z);
                         }
 
-                        if (task.z.contains(task.triple.getY())) {
-                            tripleMap.get(task.triple).set(0, tripleMap.get(task.triple).get(0)+1);
-                        } else {
-                            tripleMap.get(task.triple).set(1, tripleMap.get(task.triple).get(1)+1);
-                        }
+                        int idx = (task.z.contains(task.triple.getY())) ? 0 : 1;
+
+                        tripleMap.computeIfAbsent(task.triple, k -> new AtomicIntegerArray(2)).incrementAndGet(idx);
+
+//                        if (task.z.contains(task.triple.getY())) {
+//                            tripleMap.get(task.triple).set(0, tripleMap.get(task.triple).get(0)+1);
+//                        } else {
+//                            tripleMap.get(task.triple).set(1, tripleMap.get(task.triple).get(1)+1);
+//                        }
                     }
 
                     task = broker.get();
@@ -426,7 +422,7 @@ public class SepsetsMajorityConsumerProducer implements SepsetProducer {
     }
 
 
-    private void fillSepsetsCountsMap(final Graph graph, boolean verbose, final Map<Triple, List<Integer>> tripleMap) {
+    private void fillSepsetsCountsMap() {
 
         Broker broker = new Broker();
         List<Future> status = new ArrayList<>();
@@ -440,9 +436,9 @@ public class SepsetsMajorityConsumerProducer implements SepsetProducer {
         System.out.println("PoisonPill: " + poisonPill);
 
         try {
-            status.add(executorService.submit(new SepsetsCountsProducer(broker, graph, tripleMap, poisonPill)));
+            status.add(executorService.submit(new SepsetsCountsProducer(broker, poisonPill)));
             for (int i = 0; i < parallelism; i++) {
-                status.add(executorService.submit(new SepsetsCountsConsumer(broker, verbose, tripleMap, poisonPill)));
+                status.add(executorService.submit(new SepsetsCountsConsumer(broker, poisonPill)));
             }
 
             for (int i = 0; i < parallelism+1; i++) {

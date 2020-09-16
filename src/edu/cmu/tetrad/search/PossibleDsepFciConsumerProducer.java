@@ -252,7 +252,7 @@ public class PossibleDsepFciConsumerProducer {
 
                     if (!edgeCondsetMap.containsKey(task.edge)) {
                         if (test.isIndependent(task.edge.getNode1(), task.edge.getNode2(), task.condSet)) {
-                            edgeCondsetMap.put(task.edge, task.condSet);
+                            edgeCondsetMap.putIfAbsent(task.edge, task.condSet);
                         }
                     }
                     task = broker.get();

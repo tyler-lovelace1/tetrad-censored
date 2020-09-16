@@ -357,15 +357,13 @@ public class FasStableConsumerProducer implements IFas {
 
     private class ConsumerDepth0 implements Runnable {
         private Broker broker;
-        private List<Node> nodes;
         private IndependenceTest test;
         private Map<Node, Set<Node>> adjacencies;
         private IndependenceTask poisonPill;
 
-        public ConsumerDepth0(Broker broker, final List<Node> nodes, final IndependenceTest test,
-                              final Map<Node, Set<Node>> adjacencies, final IndependenceTask poisonPill) {
+        public ConsumerDepth0(Broker broker, final IndependenceTest test, final Map<Node, Set<Node>> adjacencies,
+                              final IndependenceTask poisonPill) {
             this.broker = broker;
-            this.nodes = nodes;
             this.test = test;
             this.adjacencies = adjacencies;
             this.poisonPill = poisonPill;
@@ -413,8 +411,19 @@ public class FasStableConsumerProducer implements IFas {
                                     nf.format(test.getPValue()));
                         }
                     } else if (!forbiddenEdge(task.x, task.y)) {
-                        adjacencies.get(task.x).add(task.y);
-                        adjacencies.get(task.y).add(task.x);
+//                        adjacencies.get(task.x).add(task.y);
+//                        adjacencies.get(task.y).add(task.x);
+
+                        IndependenceTask finalTask = task;
+                        adjacencies.compute(task.x, (k, v) -> {
+                            v.add(finalTask.y);
+                            return v;
+                        });
+
+                        adjacencies.compute(task.y, (k, v) -> {
+                            v.add(finalTask.x);
+                            return v;
+                        });
 
 //                        System.out.println("Removed:\t" + task.x + ", " + task.y);
                     }
@@ -451,7 +460,7 @@ public class FasStableConsumerProducer implements IFas {
         try {
             status.add(executorService.submit(new ProducerDepth0(broker, nodes, poisonPill)));
             for (int i = 0; i < parallelism; i++) {
-                status.add(executorService.submit(new ConsumerDepth0(broker, nodes, test, adjacencies, poisonPill)));
+                status.add(executorService.submit(new ConsumerDepth0(broker, test, adjacencies, poisonPill)));
             }
 
             for (int i = 0; i < parallelism+1; i++) {
@@ -569,15 +578,13 @@ public class FasStableConsumerProducer implements IFas {
 
     private class ConsumerDepth implements Runnable {
         private Broker broker;
-        private List<Node> nodes;
         private IndependenceTest test;
         private Map<Node, Set<Node>> adjacencies;
         private IndependenceTask poisonPill;
 
-        public ConsumerDepth(Broker broker, final List<Node> nodes, final IndependenceTest test,
-                             final Map<Node, Set<Node>> adjacencies, final IndependenceTask poisonPill) {
+        public ConsumerDepth(Broker broker, final IndependenceTest test, final Map<Node, Set<Node>> adjacencies,
+                             final IndependenceTask poisonPill) {
             this.broker = broker;
-            this.nodes = nodes;
             this.test = test;
             this.adjacencies = adjacencies;
             this.poisonPill = poisonPill;
@@ -620,8 +627,19 @@ public class FasStableConsumerProducer implements IFas {
                                 knowledge.noEdgeRequired(task.x.getName(), task.y.getName());
 
                         if (independent && noEdgeRequired) {
-                            adjacencies.get(task.x).remove(task.y);
-                            adjacencies.get(task.y).remove(task.x);
+//                            adjacencies.get(task.x).remove(task.y);
+//                            adjacencies.get(task.y).remove(task.x);
+
+                            IndependenceTask finalTask = task;
+                            adjacencies.compute(task.x, (k, v) -> {
+                                v.remove(finalTask.y);
+                                return v;
+                            });
+
+                            adjacencies.compute(task.y, (k, v) -> {
+                                v.remove(finalTask.x);
+                                return v;
+                            });
 
                             if (recordSepsets) {
                                 getSepsets().set(task.x, task.y, task.z);
@@ -688,7 +706,7 @@ public class FasStableConsumerProducer implements IFas {
         try {
             status.add(executorService.submit(new ProducerDepth(broker, nodes, adjacenciesCopy, depth, poisonPill)));
             for (int i = 0; i < parallelism; i++) {
-                status.add(executorService.submit(new ConsumerDepth(broker, nodes, test, adjacencies, poisonPill)));
+                status.add(executorService.submit(new ConsumerDepth(broker, test, adjacencies, poisonPill)));
             }
 
             for (int i = 0; i < parallelism+1; i++) {
