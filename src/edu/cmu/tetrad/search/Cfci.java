@@ -200,6 +200,7 @@ public final class Cfci implements GraphSearch {
         // Note we don't use the sepsets from this search.
 
         this.csp = new SepsetsConservativeConsumerProducer(graph, independenceTest, new SepsetMap(), depth);
+        ((SepsetsConservativeConsumerProducer) this.csp).fillSepsetsCountsMap();
 
         // Optional step: Possible Dsep. (Needed for correctness but very time consuming.)
         if (isPossibleDsepSearchDone()) {
