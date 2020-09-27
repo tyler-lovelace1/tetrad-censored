@@ -199,7 +199,7 @@ public final class Cfci implements GraphSearch {
 
         // Note we don't use the sepsets from this search.
 
-        this.csp = new SepsetsConservativeConcurrent(graph, independenceTest, new SepsetMap(), depth);
+        this.csp = new SepsetsConservativeConsumerProducer(graph, independenceTest, new SepsetMap(), depth);
 
         // Optional step: Possible Dsep. (Needed for correctness but very time consuming.)
         if (isPossibleDsepSearchDone()) {
@@ -216,7 +216,7 @@ public final class Cfci implements GraphSearch {
             // Step FCI D.
             long time3 = System.currentTimeMillis();
 
-            PossibleDsepFciConcurrent possibleDSep = new PossibleDsepFciConcurrent(graph, independenceTest);
+            PossibleDsepFciConsumerProducer possibleDSep = new PossibleDsepFciConsumerProducer(graph, independenceTest);
             possibleDSep.setDepth(getDepth());
             possibleDSep.setKnowledge(getKnowledge());
             possibleDSep.setMaxPathLength(getMaxReachablePathLength());
@@ -471,15 +471,12 @@ public final class Cfci implements GraphSearch {
     }
 
     private TripleType getTripleType(Node x, Node y, Node z) {
-        boolean existsSepsetContainingY = csp.isCollider(x, y, z);
-        boolean existsSepsetNotContainingY = csp.isNoncollider(x, y, z);
-
-        if (existsSepsetContainingY == existsSepsetNotContainingY) {
-            return TripleType.AMBIGUOUS;
-        } else if (!existsSepsetNotContainingY) {
+        if (csp.isCollider(x, y, z)) {
+            return TripleType.COLLIDER;
+        } else if (csp.isNoncollider(x, y, z)) {
             return TripleType.NONCOLLIDER;
         } else {
-            return TripleType.COLLIDER;
+            return TripleType.AMBIGUOUS;
         }
     }
 

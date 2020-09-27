@@ -60,6 +60,8 @@ public final class CpcStable implements GraphSearch {
 
     private Graph initialGraph = null;
 
+    private SepsetProducer csepsets;
+
     /**
      * Elapsed time of last search.
      */
@@ -217,18 +219,18 @@ public final class CpcStable implements GraphSearch {
         graph = initialGraph;
        // graph = new EdgeListGraphSingleConnections(nodes);
 
-        System.out.println("ConsumerProducer FAS:");
-        final FasStableConsumerProducer fascp = new FasStableConsumerProducer(getIndependenceTest());
-        fascp.setOut(out);
-        fascp.setInitialGraph(initialGraph);
-        fascp.setKnowledge(getKnowledge());
-        fascp.setDepth(getDepth());
-        fascp.setVerbose(verbose);
-        Graph testGraph = fascp.search();
-        System.out.println(testGraph);
-
-        System.out.println("ForkJoin FAS:");
-        final FasStableConcurrent fas = new FasStableConcurrent(getIndependenceTest());
+//        System.out.println("ConsumerProducer FAS:");
+//        final FasStableConsumerProducer fascp = new FasStableConsumerProducer(getIndependenceTest());
+//        fascp.setOut(out);
+//        fascp.setInitialGraph(initialGraph);
+//        fascp.setKnowledge(getKnowledge());
+//        fascp.setDepth(getDepth());
+//        fascp.setVerbose(verbose);
+//        Graph testGraph = fascp.search();
+//        System.out.println(testGraph);
+//
+//        System.out.println("ForkJoin FAS:");
+        final FasStableConsumerProducer fas = new FasStableConsumerProducer(getIndependenceTest());
         fas.setOut(out);
         fas.setInitialGraph(initialGraph);
         return search(fas, nodes);
@@ -281,8 +283,11 @@ public final class CpcStable implements GraphSearch {
 
         SearchGraphUtils.pcOrientbk(knowledge, getGraph(), nodes);
 
+        csepsets = new SepsetsConservativeConsumerProducer(graph, independenceTest, new SepsetMap(), depth);
+        ((SepsetsConservativeConsumerProducer) csepsets).fillSepsetsCountsMap();
+
 //            orientUnshieldedTriplesConcurrent(knowledge, getIndependenceTest(), getMaxIndegree());
-        orientUnshieldedTriples(knowledge);
+        orientUnshieldedTriples(csepsets, knowledge);
 
         MeekRules meekRules = new MeekRules();
         meekRules.setOut(out);
@@ -336,6 +341,52 @@ public final class CpcStable implements GraphSearch {
                 } else {
                     Triple triple = new Triple(x, y, z);
                     graph.addAmbiguousTriple(triple.getX(), triple.getY(), triple.getZ());
+                }
+
+                getAllTriples().add(new Triple(x, y, z));
+            }
+        }
+
+        TetradLogger.getInstance().log("info", "Finishing Collider Orientation.");
+    }
+
+    private void orientUnshieldedTriples(SepsetProducer sepsets, IKnowledge knowledge) {
+        TetradLogger.getInstance().log("info", "Starting Collider Orientation:");
+
+        List<Node> nodes = graph.getNodes();
+
+        for (Node y : nodes) {
+            List<Node> adjacentNodes = graph.getAdjacentNodes(y);
+
+            if (adjacentNodes.size() < 2) {
+                continue;
+            }
+
+            ChoiceGenerator cg = new ChoiceGenerator(adjacentNodes.size(), 2);
+            int[] combination;
+
+            while ((combination = cg.next()) != null) {
+                Node x = adjacentNodes.get(combination[0]);
+                Node z = adjacentNodes.get(combination[1]);
+
+                if (this.graph.isAdjacentTo(x, z)) {
+                    continue;
+                }
+
+//                Triple triple = new Triple(x, y, z);
+
+//                List<List<Node>> sepsetsxz = getSepsets(x, z, graph);
+
+                if (sepsets.isCollider(x, y, z)) {
+                    if (colliderAllowed(x, y, z, knowledge)) {
+                        graph.setEndpoint(x, y, Endpoint.ARROW);
+                        graph.setEndpoint(z, y, Endpoint.ARROW);
+
+                        TetradLogger.getInstance().log("colliderOrientations", SearchLogUtils.colliderOrientedMsg(x, y, z));
+                    }
+                } else if (!sepsets.isNoncollider(x, y, z)) {
+//                        Triple triple = new Triple(x, y, z);
+                        graph.addAmbiguousTriple(x, y, z);
                 }
 
                 getAllTriples().add(new Triple(x, y, z));

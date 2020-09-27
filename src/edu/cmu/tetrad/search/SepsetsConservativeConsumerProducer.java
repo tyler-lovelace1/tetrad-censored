@@ -29,14 +29,16 @@ import edu.cmu.tetrad.graph.Triple;
 import edu.cmu.tetrad.util.ChoiceGenerator;
 import org.apache.commons.lang3.RandomStringUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 
 /**
  * Created by josephramsey on 3/24/15.
  */
-public class SepsetsMajorityConsumerProducer implements SepsetProducer {
+public class SepsetsConservativeConsumerProducer implements SepsetProducer {
     private final Graph graph;
     private final IndependenceTest independenceTest;
     private final SepsetMap extraSepsets;
@@ -52,7 +54,7 @@ public class SepsetsMajorityConsumerProducer implements SepsetProducer {
 //    private ForkJoinPool pool;
 //    private ForkJoinPool pool = ForkJoinPoolInstance.getInstance().getPool();
 
-    public SepsetsMajorityConsumerProducer(Graph graph, IndependenceTest independenceTest, SepsetMap extraSepsets, int depth) {
+    public SepsetsConservativeConsumerProducer(Graph graph, IndependenceTest independenceTest, SepsetMap extraSepsets, int depth) {
         this.graph = graph;
         this.independenceTest = independenceTest;
         this.extraSepsets = extraSepsets;
@@ -143,7 +145,7 @@ public class SepsetsMajorityConsumerProducer implements SepsetProducer {
             ret = temp;
             System.out.println("unknown triple added");
         }
-        return ret.get(0) < ret.get(1);
+        return ret.get(0) == 0;
     }
 
     public boolean isNoncollider(Node i, Node j, Node k) {
@@ -166,7 +168,7 @@ public class SepsetsMajorityConsumerProducer implements SepsetProducer {
 //            sepsetsListsMap.put(new Triple(i, j, k), ret);
             System.out.println("unknown triple added");
         }
-        return ret.get(0) >= ret.get(1);
+        return ret.get(1) == 0;
     }
 
     // The published version.

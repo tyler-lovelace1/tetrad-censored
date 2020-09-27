@@ -683,15 +683,14 @@ public class runAlgorithms {
                     System.out.println("Maximum Heap Space: " + Runtime.getRuntime().maxMemory());
                     DataGraphSearch gs = Algorithm.algToSearchWrapper(convert(alg), new double[]{alpha});
                     if(g!=null) {
-//                        if (d.isCensored()) {
-//                            g = moralizeCensoredNeighbors(d, g, alpha);
-//                        }
+                        if (d.isCensored()) {
+                            g = moralizeCensoredNeighbors(d, g, alpha);
+                        }
                         gs.setInitialGraph(g);
                     } else if(initGraph!=null) {
-//                        if (d.isCensored()) {
-//                            initGraph = moralizeCensoredNeighbors(d, initGraph, alpha);
-////                            System.out.println(initGraph);
-//                        }
+                        if (d.isCensored()) {
+                            initGraph = moralizeCensoredNeighbors(d, initGraph, alpha);
+                        }
                         gs.setInitialGraph(initGraph);
                     }
                     if(k!=null)

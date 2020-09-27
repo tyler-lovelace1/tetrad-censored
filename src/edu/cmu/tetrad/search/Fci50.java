@@ -210,7 +210,13 @@ public final class Fci50 implements GraphSearch {
         this.graph = fas.search();
 //        this.sepsets = fas.getSepsets();
 
-        this.sepsets50 = new SepsetsMajorityConsumerProducer(graph, independenceTest, new SepsetMap(), depth);
+        sepsets50 = new SepsetsMajorityConsumerProducer(graph, independenceTest, new SepsetMap(), depth);
+        ((SepsetsMajorityConsumerProducer) sepsets50).fillSepsetsCountsMap();
+
+//        boolean edgesAdded;
+//        do {
+//            edgesAdded = ((SepsetsMajorityConsumerProducer) sepsets50).fillSepsetsCountsMap();
+//        } while (edgesAdded);
 
         graph.reorientAllWith(Endpoint.CIRCLE);
 

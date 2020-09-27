@@ -298,7 +298,8 @@ public class FasStableConsumerProducer implements IFas {
     }
 
     private class Broker {
-        public ArrayBlockingQueue<IndependenceTask> queue = new ArrayBlockingQueue<>(1000000);
+        private int capacity = 100000;
+        public LinkedBlockingQueue<IndependenceTask> queue = new LinkedBlockingQueue<>(capacity);
 
         public void put(IndependenceTask task) throws InterruptedException {
             queue.put(task);

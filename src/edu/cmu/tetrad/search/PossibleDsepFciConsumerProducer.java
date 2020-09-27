@@ -148,7 +148,8 @@ public class PossibleDsepFciConsumerProducer {
     }
 
     private class Broker {
-        public ArrayBlockingQueue<PossibleDsepTask> queue = new ArrayBlockingQueue<>(1000000);
+        private int capacity = 100000;
+        public LinkedBlockingQueue<PossibleDsepTask> queue = new LinkedBlockingQueue<>(capacity);
 
         public void put(PossibleDsepTask task) throws InterruptedException {
             queue.put(task);
