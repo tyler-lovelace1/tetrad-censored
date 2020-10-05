@@ -79,11 +79,29 @@ public class SearchWrappers {
             super(params);
         }
 
-        public PcStableWrapper copy(){return new PcStableWrapper(searchParams);}
+        public CpcStableWrapper copy(){return new CpcStableWrapper(searchParams);}
 
         public Graph search(DataSet ds) {
             IndTestMultinomialAJ indTest = new IndTestMultinomialAJ(ds, searchParams[0],false);
             CpcStable pcs = new CpcStable(indTest);
+            if(initialGraph!=null)
+                pcs.setInitialGraph(initialGraph);
+            if(knowledge!=null)
+                pcs.setKnowledge(knowledge);
+            return pcs.search();
+        }
+    }
+    public static class Pc50StableWrapper extends DataGraphSearch {
+        //should be one param for the alpha level of the independance test
+        public Pc50StableWrapper(double... params) {
+            super(params);
+        }
+
+        public Pc50StableWrapper copy(){return new Pc50StableWrapper(searchParams);}
+
+        public Graph search(DataSet ds) {
+            IndTestMultinomialAJ indTest = new IndTestMultinomialAJ(ds, searchParams[0],false);
+            Pc50Stable pcs = new Pc50Stable(indTest);
             if(initialGraph!=null)
                 pcs.setInitialGraph(initialGraph);
             if(knowledge!=null)

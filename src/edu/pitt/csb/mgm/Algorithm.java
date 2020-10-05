@@ -20,6 +20,7 @@ public final class Algorithm implements TetradSerializable {
     public static final Algorithm PCS = new Algorithm("PC-Stable");
     public static final Algorithm CPC = new Algorithm("CPC");
     public static final Algorithm PCMAX = new Algorithm("PC-Max");
+    public static final Algorithm PC50 = new Algorithm("PC50");
     public static final Algorithm FGS = new Algorithm("FGES");
     public static final Algorithm LiNG = new Algorithm("LiNG");
     public static final Algorithm FCIMAX = new Algorithm("FCI-MAX");
@@ -68,6 +69,8 @@ public final class Algorithm implements TetradSerializable {
             return new SearchWrappers.PcMaxWrapper(params);
         else if(a==Algorithm.PCS)
             return new SearchWrappers.PcStableWrapper(params);
+        else if(a==Algorithm.PC50)
+            return new SearchWrappers.Pc50StableWrapper(params);
         else
             return null;
     }
@@ -81,7 +84,7 @@ public final class Algorithm implements TetradSerializable {
     // Declarations required for serialization.
     private static int nextOrdinal = 0;
     private final int ordinal = nextOrdinal++;
-    private static final Algorithm[] TYPES = {FCI,MGMFCI,MGMFCIMAX,PCS,CPC,PCMAX,NONE};
+    private static final Algorithm[] TYPES = {FCI,MGMFCI,MGMFCIMAX,PCS,CPC,PCMAX,PC50,NONE};
 
     Object readResolve() throws ObjectStreamException {
         return TYPES[ordinal]; // Canonicalize.
