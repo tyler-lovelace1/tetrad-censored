@@ -369,8 +369,10 @@ public class SepsetsMajorityConsumerProducer implements SepsetProducer {
 
                     }
                 }
-                broker.put(poisonPill);
-                broker.put(poisonPill);
+                for (int i = 0; i < parallelism+1; i++) {
+                    broker.put(poisonPill);
+//                    broker.put(poisonPill);
+                }
                 System.out.println("\t" + Thread.currentThread().getName() + ": SepsetsCountsProducer Finish");
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -394,31 +396,34 @@ public class SepsetsMajorityConsumerProducer implements SepsetProducer {
                 ColliderTask task = broker.get();
 
                 while (task != poisonPill) {
-
-                    if (task == null) {
-                        task = broker.get();
-                        continue;
-                    }
-
-                    if (independenceTest.isIndependent(task.x, task.y, task.z)) {
-                        if (verbose) {
-                            System.out.println("Indep: " + task.x + " _||_ " + task.y + " | " + task.z);
+                    if (task != null) {
+                        boolean independent;
+                        try {
+                            independent = independenceTest.isIndependent(task.x, task.y, task.z);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            independent = true;
                         }
+                        if (independent) {
+                            if (verbose) {
+                                System.out.println("Indep: " + task.x + " _||_ " + task.y + " | " + task.z);
+                            }
 
-                        int idx = (task.z.contains(task.triple.getY())) ? 0 : 1;
+                            int idx = (task.z.contains(task.triple.getY())) ? 0 : 1;
 
-                        tripleMap.compute(task.triple, (k , v) -> {
-                            v.incrementAndGet(idx);
-                            return v;
-                        });
+                            tripleMap.get(task.triple).incrementAndGet(idx);
+//                            tripleMap.compute(task.triple, (k, v) -> {
+//                                v.incrementAndGet(idx);
+//                                return v;
+//                            });
 
 //                        if (task.z.contains(task.triple.getY())) {
 //                            tripleMap.get(task.triple).set(0, tripleMap.get(task.triple).get(0)+1);
 //                        } else {
 //                            tripleMap.get(task.triple).set(1, tripleMap.get(task.triple).get(1)+1);
 //                        }
+                        }
                     }
-
                     task = broker.get();
                 }
                 broker.put(poisonPill);

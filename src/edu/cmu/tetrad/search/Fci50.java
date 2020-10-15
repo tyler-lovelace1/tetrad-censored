@@ -210,6 +210,9 @@ public final class Fci50 implements GraphSearch {
         this.graph = fas.search();
 //        this.sepsets = fas.getSepsets();
 
+        System.out.println("FAS graph:");
+        System.out.println(this.graph);
+
         sepsets50 = new SepsetsMajorityConsumerProducer(graph, independenceTest, new SepsetMap(), depth);
         ((SepsetsMajorityConsumerProducer) sepsets50).fillSepsetsCountsMap();
 

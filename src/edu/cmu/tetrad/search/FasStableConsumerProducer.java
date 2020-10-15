@@ -178,6 +178,22 @@ public class FasStableConsumerProducer implements IFas {
                 more = searchAtDepth(nodes, test, adjacencies, d);
             }
 
+//            System.out.println("FAS graph after depth " + d + ":");
+//
+//            Graph tempgraph = new EdgeListGraph(nodes);
+//            for (int i = 0; i < nodes.size(); i++) {
+//                for (int j = i + 1; j < nodes.size(); j++) {
+//                    Node x = nodes.get(i);
+//                    Node y = nodes.get(j);
+//
+//                    if (adjacencies.get(x).contains(y)) {
+//                        tempgraph.addUndirectedEdge(x, y);
+//                    }
+//                }
+//            }
+//
+//            System.out.println(tempgraph);
+
             if (!more) {
                 break;
             }
@@ -378,57 +394,70 @@ public class FasStableConsumerProducer implements IFas {
                 IndependenceTask task = broker.get();
 
                 while (task != poisonPill) {
-
-                    if (task == null) {
-                        task = broker.get();
-                        continue;
-                    }
-
+                    if (task != null) {
 //                    System.out.println("Test for " + task.x + " _||_ " + task.y);
 
-                    try {
-                        independent = test.isIndependent(task.x, task.y, task.z);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        independent = true;
-                    }
-
-//                    System.out.println("Test for " + task.x + " _||_ " + task.y + " returns " + independent);
-
-                    numIndependenceTests++;
-
-                    boolean noEdgeRequired =
-                            knowledge.noEdgeRequired(task.x.getName(), task.y.getName());
-
-                    if (independent && noEdgeRequired) {
-                        if (recordSepsets && !sepsets.isReturnEmptyIfNotSet()) {
-                            getSepsets().set(task.x, task.y, task.z);
+                        try {
+                            independent = test.isIndependent(task.x, task.y, task.z);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            independent = true;
                         }
 
-                        if (verbose) {
-                            TetradLogger.getInstance().forceLogMessage(SearchLogUtils.independenceFact(task.x, task.y, task.z) + " p = " +
-                                    nf.format(test.getPValue()));
-                            out.println(SearchLogUtils.independenceFact(task.x, task.y, task.z) + " p = " +
-                                    nf.format(test.getPValue()));
-                        }
-                    } else if (!forbiddenEdge(task.x, task.y)) {
+//                        System.out.println("Test for " + task.x + " _||_ " + task.y + " returns " + independent);
+
+                        numIndependenceTests++;
+
+                        boolean noEdgeRequired =
+                                knowledge.noEdgeRequired(task.x.getName(), task.y.getName());
+
+                        if (independent && noEdgeRequired) {
+                            if (recordSepsets && !sepsets.isReturnEmptyIfNotSet()) {
+                                getSepsets().set(task.x, task.y, task.z);
+                            }
+
+                            if (verbose) {
+                                TetradLogger.getInstance().forceLogMessage(SearchLogUtils.independenceFact(task.x, task.y, task.z) + " p = " +
+                                        nf.format(test.getPValue()));
+                                out.println(SearchLogUtils.independenceFact(task.x, task.y, task.z) + " p = " +
+                                        nf.format(test.getPValue()));
+                            }
+                        } else if (!forbiddenEdge(task.x, task.y)) {
 //                        adjacencies.get(task.x).add(task.y);
 //                        adjacencies.get(task.y).add(task.x);
 
-                        IndependenceTask finalTask = task;
-                        adjacencies.compute(task.x, (k, v) -> {
-                            v.add(finalTask.y);
-                            return v;
-                        });
+//                            System.out.println("adding edge:\t" + task.x + " --- " + task.y);
 
-                        adjacencies.compute(task.y, (k, v) -> {
-                            v.add(finalTask.x);
-                            return v;
-                        });
+                            IndependenceTask finalTask = task;
+                            Set<Node> adjx = new HashSet<>();
+                            while (!adjx.contains(task.y)) {
+                                try {
+                                    adjx = new HashSet<>(adjacencies.compute(task.x, (k, v) -> {
+                                        v.add(finalTask.y);
+                                        return v;
+                                    }));
+                                } catch (ConcurrentModificationException e) {
+                                    adjx = new HashSet<>();
+                                }
+                            }
 
+                            Set<Node> adjy = new HashSet<>();
+                            while (!adjy.contains(task.x)) {
+                                try {
+                                    adjy = new HashSet<>(adjacencies.compute(task.y, (k, v) -> {
+                                        v.add(finalTask.x);
+                                        return v;
+                                    }));
+                                } catch (ConcurrentModificationException e) {
+                                    adjy = new HashSet<>();
+                                }
+                            }
+
+//                            System.out.println(task.x + ": " + adjx);
+//                            System.out.println(task.y + ": " + adjy);
 //                        System.out.println("Removed:\t" + task.x + ", " + task.y);
+                        }
                     }
-
                     task = broker.get();
                 }
                 broker.put(poisonPill);
@@ -605,53 +634,65 @@ public class FasStableConsumerProducer implements IFas {
                 System.out.println("\t" + Thread.currentThread().getName() + ": ConsumerDepth" + d + " Start");
 
                 while (task != poisonPill) {
-
-                    if (task == null) {
-                        task = broker.get();
-                        continue;
-                    }
-
+                    if (task != null) {
 //                    System.out.println("Test for " + task.x + " _||_ " + task.y);
 
-                    if (adjacencies.get(task.x).contains(task.y) & adjacencies.get(task.y).contains(task.x)) {
+//                        if (adjacencies.get(task.x).contains(task.y) & adjacencies.get(task.y).contains(task.x)) {
+                        if (adjacencies.get(task.x).contains(task.y) & adjacencies.get(task.y).contains(task.x)) {
 
-                        try {
-                            independent = test.isIndependent(task.x, task.y, task.z);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            independent = true;
-                        }
+                            try {
+                                independent = test.isIndependent(task.x, task.y, task.z);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                independent = true;
+                            }
 
 //                        System.out.println("Test for " + task.x + " _||_ " + task.y + " | " + task.z + " : " + independent);
 
-                        boolean noEdgeRequired =
-                                knowledge.noEdgeRequired(task.x.getName(), task.y.getName());
+                            boolean noEdgeRequired =
+                                    knowledge.noEdgeRequired(task.x.getName(), task.y.getName());
 
-                        if (independent && noEdgeRequired) {
+                            if (independent && noEdgeRequired) {
 //                            adjacencies.get(task.x).remove(task.y);
 //                            adjacencies.get(task.y).remove(task.x);
 
-                            IndependenceTask finalTask = task;
-                            adjacencies.compute(task.x, (k, v) -> {
-                                v.remove(finalTask.y);
-                                return v;
-                            });
+                                IndependenceTask finalTask = task;
 
-                            adjacencies.compute(task.y, (k, v) -> {
-                                v.remove(finalTask.x);
-                                return v;
-                            });
+                                Set<Node> adjx;
+                                do {
+                                    try {
+                                        adjx = new HashSet<>(adjacencies.compute(task.x, (k, v) -> {
+                                            v.remove(finalTask.y);
+                                            return v;
+                                        }));
+                                    } catch (ConcurrentModificationException e) {
+                                        adjx = adjacencies.get(task.x);
+                                    }
+                                } while (adjx.contains(task.y));
 
-                            if (recordSepsets) {
-                                getSepsets().set(task.x, task.y, task.z);
-                            }
+                                Set<Node> adjy;
+                                do {
+                                    try {
+                                        adjy = new HashSet<>(adjacencies.compute(task.y, (k, v) -> {
+                                            v.remove(finalTask.x);
+                                            return v;
+                                        }));
+                                    } catch (ConcurrentModificationException e) {
+                                        adjy = adjacencies.get(task.y);
+                                    }
+                                } while (adjy.contains(task.x));
 
-                            if (verbose) {
-                                TetradLogger.getInstance().forceLogMessage(
-                                        SearchLogUtils.independenceFact(task.x, task.y, task.z) + " p = " +
-                                                nf.format(test.getPValue()));
-                                out.println(SearchLogUtils.independenceFact(task.x, task.y, task.z) + " p = " +
-                                        nf.format(test.getPValue()));
+                                if (recordSepsets) {
+                                    getSepsets().set(task.x, task.y, task.z);
+                                }
+
+                                if (verbose) {
+                                    TetradLogger.getInstance().forceLogMessage(
+                                            SearchLogUtils.independenceFact(task.x, task.y, task.z) + " p = " +
+                                                    nf.format(test.getPValue()));
+                                    out.println(SearchLogUtils.independenceFact(task.x, task.y, task.z) + " p = " +
+                                            nf.format(test.getPValue()));
+                                }
                             }
                         }
                     }

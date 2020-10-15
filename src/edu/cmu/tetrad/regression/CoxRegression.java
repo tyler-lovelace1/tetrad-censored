@@ -112,7 +112,7 @@ public class CoxRegression implements TetradSerializable {
      * @return the regression plane.
      */
     public CoxRegressionResult regress(CensoredVariable target, List<Node> regressors, int[] _rows) {
-//        System.out.println("fitting " + target.getName());
+//        System.out.println(Thread.currentThread().getName() + "fitting " + target.getName());
 
         DoubleMatrix2D X;
         CensoredVariable _target;
@@ -120,7 +120,7 @@ public class CoxRegression implements TetradSerializable {
         List<Node> tempList = new ArrayList<Node>();
         String[] regressorNames = new String[regressors.size()];
 
-//        System.out.println("Regressors:");
+//        System.out.println(Thread.currentThread().getName() + "Regressors:");
         for (int i = 0; i < regressors.size(); i++) {
             tempList.add(regressors.get(i));
             regressorNames[i] = regressors.get(i).getName();
@@ -176,7 +176,17 @@ public class CoxRegression implements TetradSerializable {
             return new CoxRegressionResult(regressorNames, _rows.length, b, z, pval, se, 0.5, new_l, this.alpha);
         }
 
+//        System.out.println(Thread.currentThread().getName() + ": fitting " + target.getName());
+//
+//        System.out.println(Thread.currentThread().getName() + ": Regressors:");
+//        for (int i = 0; i < regressors.size(); i++) {
+//            System.out.print(regressorNames[i] + ", ");
+//        }
+//        System.out.println();
+
         new_l = loss(beta, X, _target);
+
+        double init_l = new_l;
 
 //        System.out.println("complete samples: " + _rows.length);
 
@@ -188,9 +198,13 @@ public class CoxRegression implements TetradSerializable {
 //        for (int idx :  target.getOrder()) System.out.print(idx + " ");
 //        System.out.println("H: ");
 //        for (int idx :  target.getH()) System.out.print(idx + " ");
-//        System.out.println("initial loss: " + new_l);
+//        System.out.println(Thread.currentThread().getName() + ": initial loss: " + new_l);
 
-        while (Math.abs(old_l - new_l) > 1e-5) {
+        double dbeta = 1;
+
+        int iter = 0;
+
+        while (dbeta > 1e-4) {
             old_l = new_l;
             a = 1;
 
@@ -211,20 +225,29 @@ public class CoxRegression implements TetradSerializable {
 
             t = -c * m;
 
+//            System.out.println(Thread.currentThread().getName() + ":\t" + iter + " beta: " + beta);
+//            System.out.println(Thread.currentThread().getName() + ":\t" + iter + " update direction: " + p);
             while (true) {
                 new_l = loss(beta.copy().assign(p, Functions.plusMult(a)), X, _target);
-//                System.out.println("\t\talpha: " + a);
+//                System.out.println(Thread.currentThread().getName() + ":\t\talpha: " + a);
                 if (old_l - new_l <= a*t) {
-                    break;
+                    if (!Double.isInfinite(new_l)) {
+                        break;
+                    }
+//                    else {
+//                        System.out.println(Thread.currentThread().getName() + ":\t\tinfinity");
+//                    }
                 }
                 a /= 2;
             }
 
             beta.assign(p, Functions.plusMult(a));
-//            System.out.println("\tloss: " + new_l);
+            dbeta = norm2(p.copy().assign(Functions.mult(a))) / norm2(beta);
+            iter++;
+//            System.out.println(Thread.currentThread().getName() + ":\t" + iter + " loss: " + new_l);
         }
 
-//        System.out.println("final loss: " + new_l);
+//        System.out.println(Thread.currentThread().getName() + ": final loss: " + new_l + ", dloss: " + Math.abs(old_l - new_l) + ", dbeta: " + dbeta);
 
         hess = factory2D.make(beta.size(), beta.size(), 0.0);
         grad = factory1D.make(beta.size(), 0.0);
@@ -740,6 +763,11 @@ public class CoxRegression implements TetradSerializable {
         double p = 2 * nd.cumulativeProbability(-Math.abs(z));
         assert !Double.isNaN(p);
         return p;
+    }
+
+    public static double norm2(DoubleMatrix1D vec){
+        //return Math.sqrt(vec.copy().assign(Functions.pow(2)).zSum());
+        return Math.sqrt(new Algebra().norm2(vec));
     }
 
 }

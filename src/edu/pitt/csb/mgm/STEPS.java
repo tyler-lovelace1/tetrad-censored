@@ -886,15 +886,15 @@ System.out.println("Lambdas: " + Arrays.toString(lambda));
         double SC = -1;
         double SD = -1;
         double CCMax = -1;
-        int CCMaxI = 0;
+        int CCMaxI = -1;
         double CDMax = -1;
-        int CDMaxI = 0;
+        int CDMaxI = -1;
         double DDMax = -1;
-        int DDMaxI = 0;
+        int DDMaxI = -1;
         double SCMax = -1;
-        int SCMaxI = 0;
+        int SCMaxI = -1;
         double SDMax = -1;
-        int SDMaxI = 0;
+        int SDMaxI = -1;
         double oneLamb = -1;
         double allMax = -1;
         double allMaxI = -1;
@@ -1069,11 +1069,11 @@ System.out.println("Lambdas: " + Arrays.toString(lambda));
             }
 
             if (currIndex > 0) {
-                ccStop = (ccDestable <= gamma) && (ccDestable <= CCMax);
-                cdStop = (cdDestable <= gamma) && (cdDestable <= CDMax);
-                ddStop = (ddDestable <= gamma) && (ddDestable <= DDMax);
-                scStop = (scDestable <= gamma) && (scDestable <= SCMax);
-                sdStop = (sdDestable <= gamma) && (sdDestable <= SDMax);
+                ccStop = ((ccDestable <= gamma) && (ccDestable <= CCMax)) || Double.isNaN(ccDestable);
+                cdStop = ((cdDestable <= gamma) && (cdDestable <= CDMax)) || Double.isNaN(cdDestable);
+                ddStop = ((ddDestable <= gamma) && (ddDestable <= DDMax)) || Double.isNaN(ddDestable);
+                scStop = ((scDestable <= gamma) && (scDestable <= SCMax)) || Double.isNaN(scDestable);
+                sdStop = ((sdDestable <= gamma) && (sdDestable <= SDMax)) || Double.isNaN(sdDestable);
             }
             
             if ((ccStop && cdStop && ddStop && (r==0)) || (ccStop && cdStop && ddStop && scStop && sdStop)) {
@@ -1089,18 +1089,30 @@ System.out.println("Lambdas: " + Arrays.toString(lambda));
         System.out.println("Max index: (" + Integer.toString(CCMaxI) + ", " + Integer.toString(CDMaxI) + ", " + Integer.toString(DDMaxI) + ", " + Integer.toString(SCMaxI) + ", " + Integer.toString(SDMaxI) + ")");
         
         for (int i = CCMaxI; i < lambda.length; i++) {
+            if (i == -1) {
+                CC = lambda[lambda.length-1];
+                break;
+            }
         	if (ccStabs[i] < gamma) {
         		CC = lambda[i];
         		break;
         	}
         }
         for (int i = CDMaxI; i < lambda.length; i++) {
+            if (i == -1) {
+                CD = lambda[lambda.length-1];
+                break;
+            }
         	if (cdStabs[i] < gamma) {
         		CD = lambda[i];
         		break;
         	}
         }
         for (int i = DDMaxI; i < lambda.length; i++) {
+            if (i == -1) {
+                DD = lambda[lambda.length-1];
+                break;
+            }
         	if (ddStabs[i] < gamma) {
         		DD = lambda[i];
         		break;
