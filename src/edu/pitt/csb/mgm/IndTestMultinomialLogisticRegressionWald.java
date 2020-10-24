@@ -490,6 +490,11 @@ public class IndTestMultinomialLogisticRegressionWald implements IndependenceTes
         return getPValue();
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestMultinomialLogisticRegressionWald(this.originalData, this.alpha, this.preferLinear);
+    }
+
     /**
      * @return a string representation of this test.
      */

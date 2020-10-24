@@ -334,6 +334,11 @@ public final class IndTestDrton implements IndependenceTest {
         return -(getPValue() - getAlpha());
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestDrton(this.dataSet, this.alpha);
+    }
+
     public void shuffleVariables() {
         ArrayList<Node> nodes = new ArrayList<>(this.variables);
         Collections.shuffle(nodes);

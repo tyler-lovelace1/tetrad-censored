@@ -541,6 +541,11 @@ public class IndTestMixedRegressionLrt implements IndependenceTest {
         return getPValue();
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestMixedRegressionLrt(this.originalData, this.alpha);
+    }
+
     /**
      * @return a string representation of this test.
      */

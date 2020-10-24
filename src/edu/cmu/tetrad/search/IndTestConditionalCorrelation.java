@@ -271,6 +271,11 @@ public final class IndTestConditionalCorrelation implements IndependenceTest {
         return cci.getScore();
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestConditionalCorrelation(this.dataSet, this.alpha);
+    }
+
     /**
      * @return a string representation of this test.
      */

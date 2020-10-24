@@ -62,6 +62,12 @@ public class kci_matlab implements IndependenceTest {
     public double getScore(){
         return 0;
     }
+
+    @Override
+    public IndependenceTest clone() {
+        return new kci_matlab(this.dat, this.alpha, this.graphNum, this.tg, this.out);
+    }
+
     public boolean isIndependent(Node x, Node y, List<Node> z)
     {
         total++;

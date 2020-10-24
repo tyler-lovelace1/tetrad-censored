@@ -212,6 +212,11 @@ public class IndTestScore implements IndependenceTest {
     public double getScore() {
         return bump;
     }
+
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestScore(this.score, this.data);
+    }
 }
 
 

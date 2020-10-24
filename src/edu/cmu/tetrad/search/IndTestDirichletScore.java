@@ -303,6 +303,11 @@ public final class IndTestDirichletScore implements IndependenceTest {
         return this.bump;
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestDirichletScore(this.dataSet, this.samplePrior, this.structurePrior);
+    }
+
     public double getSamplePrior() {
         return samplePrior;
     }

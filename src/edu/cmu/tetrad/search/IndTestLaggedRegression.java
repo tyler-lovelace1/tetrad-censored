@@ -86,6 +86,7 @@ public final class IndTestLaggedRegression implements IndependenceTest {
     private DataSet timeLags;
     private Regression regression;
     private final DataSet timeSeries;
+    private int numLags;
     private boolean verbose = false;
 
     //==========================CONSTRUCTORS=============================//
@@ -99,6 +100,7 @@ public final class IndTestLaggedRegression implements IndependenceTest {
             throw new IllegalArgumentException("Alpha mut be in [0, 1]");
         }
 
+        this.numLags = numLags;
         this.timeSeries = timeSeries;
 //        this.data = new DenseDoubleMatrix2D(timeSeries.getDoubleData().toArray());
         this.variables = Collections.unmodifiableList(timeSeries.getVariables());
@@ -443,6 +445,11 @@ public final class IndTestLaggedRegression implements IndependenceTest {
     @Override
     public double getScore() {
         return getPValue();
+    }
+
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestLaggedRegression(this.timeSeries,this.alpha, this.numLags);
     }
 
     public boolean isVerbose() {

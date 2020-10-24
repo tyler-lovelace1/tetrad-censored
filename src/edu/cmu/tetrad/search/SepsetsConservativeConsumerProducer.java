@@ -409,10 +409,12 @@ public class SepsetsConservativeConsumerProducer implements SepsetProducer {
 
                         int idx = (task.z.contains(task.triple.getY())) ? 0 : 1;
 
-                        tripleMap.compute(task.triple, (k , v) -> {
-                            v.incrementAndGet(idx);
-                            return v;
-                        });
+                        tripleMap.get(task.triple).incrementAndGet(idx);
+
+//                        tripleMap.compute(task.triple, (k , v) -> {
+//                            v.incrementAndGet(idx);
+//                            return v;
+//                        });
 
 //                        if (task.z.contains(task.triple.getY())) {
 //                            tripleMap.get(task.triple).set(0, tripleMap.get(task.triple).get(0)+1);

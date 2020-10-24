@@ -421,6 +421,11 @@ public class IndTestDSepDiminishingPathStrengths implements IndependenceTest {
         return -(getPValue() - getAlpha());
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestDSepDiminishingPathStrengths(this.semIm, this.alpha);
+    }
+
     public void startRecordingFacts() {
         this.facts = new HashSet<>();
     }

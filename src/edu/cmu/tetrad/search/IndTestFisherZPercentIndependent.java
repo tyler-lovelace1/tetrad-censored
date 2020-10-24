@@ -272,6 +272,11 @@ public final class IndTestFisherZPercentIndependent implements IndependenceTest 
         return getPValue();
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestFisherZPercentIndependent(this.dataSets, this.alpha);
+    }
+
     /**
      * @return a string representation of this test.
      */

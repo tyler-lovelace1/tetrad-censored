@@ -387,8 +387,8 @@ public final class FciOrient {
             }
         }
 
-        out.println("rule R1R2 cycle");
-        out.println(graph);
+//        out.println("rule R1R2 cycle");
+//        out.println(graph);
     }
 
     /// R1, away from collider
@@ -546,8 +546,8 @@ public final class FciOrient {
             }
         }
 
-        out.println("rule R3");
-        out.println(graph);
+//        out.println("rule R3");
+//        out.println(graph);
     }
 
 //    public void ruleR4(Graph graph) {
@@ -759,8 +759,8 @@ public final class FciOrient {
             }
         }
 
-        out.println("rule R4");
-        out.println(graph);
+//        out.println("rule R4");
+//        out.println(graph);
     }
 
     /**
@@ -995,8 +995,8 @@ public final class FciOrient {
             }
         }
 
-        out.println("rule R5");
-        out.println(graph);
+//        out.println("rule R5");
+//        out.println(graph);
     }
 
     /**
@@ -1055,8 +1055,8 @@ public final class FciOrient {
             }
         }
 
-        out.println("rule R6R7");
-        out.println(graph);
+//        out.println("rule R6R7");
+//        out.println(graph);
 
     }
 
@@ -1088,8 +1088,8 @@ public final class FciOrient {
             }
         }
 
-        out.println("rule R8R9R10");
-        out.println(graph);
+//        out.println("rule R8R9R10");
+//        out.println(graph);
 
     }
 

@@ -272,6 +272,9 @@ public final class Fci50 implements GraphSearch {
         long endTime = System.currentTimeMillis();
         this.elapsedTime = endTime - beginTime;
 
+        System.out.println("FCI50 final graph:");
+        System.out.println(graph);
+
         System.out.println("FCI50 ELAPSED TIME: " + this.elapsedTime/1000 + "s");
 
         return graph;

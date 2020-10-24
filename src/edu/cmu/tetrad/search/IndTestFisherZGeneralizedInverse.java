@@ -479,6 +479,11 @@ public final class IndTestFisherZGeneralizedInverse implements IndependenceTest 
         return getPValue();
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestFisherZGeneralizedInverse(this.dataSet, this.alpha);
+    }
+
     public boolean isVerbose() {
         return verbose;
     }

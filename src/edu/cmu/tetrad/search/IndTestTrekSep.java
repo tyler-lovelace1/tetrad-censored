@@ -449,6 +449,11 @@ public final class IndTestTrekSep implements IndependenceTest {
         return getPValue();
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestTrekSep(this.covMatrix, this.alpha, this.clustering, this.latents);
+    }
+
     public TDistribution gettDistribution() {
         return tDistribution;
     }

@@ -229,6 +229,11 @@ public class IndTestConditionalGaussianLRT implements IndependenceTest {
         return getAlpha() - getPValue();
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestConditionalGaussianLRT(this.data, this.alpha);
+    }
+
     /**
      * @return a string representation of this test.
      */

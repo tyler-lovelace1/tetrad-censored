@@ -267,6 +267,11 @@ public class IndTestProbabilisticVerbose implements IndependenceTest {
         return getPValue();
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestProbabilisticVerbose(this.data, this.out, this.dsepTest);
+    }
+
     public Map<IndependenceFact, Double> getH() {
         return new HashMap<>(H);
     }

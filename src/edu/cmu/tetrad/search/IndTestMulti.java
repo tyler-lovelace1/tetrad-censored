@@ -256,6 +256,11 @@ public final class IndTestMulti implements IndependenceTest {
         return getPValue();
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return null;
+    }
+
     /**
      * @return a string representation of this test.
      */

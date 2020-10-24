@@ -387,6 +387,11 @@ public final class IndTestCramerT implements IndependenceTest {
         return -(getPValue() - getAlpha());
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestCramerT(this.dataSet, this.alpha);
+    }
+
     /**
      * @return the list of variable names
      */

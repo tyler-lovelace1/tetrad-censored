@@ -300,6 +300,11 @@ public class IndTestDSep implements IndependenceTest {
         return getPValue() == 1 ? -1 : 1;
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestDSep(this.graph);
+    }
+
     public void startRecordingFacts() {
         this.facts = new HashSet<>();
     }

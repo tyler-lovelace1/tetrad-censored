@@ -51,6 +51,7 @@ public class IndTestFisherZBootstrap implements IndependenceTest {
 
     private DataSet dataSet;
     private int numBootstrapSamples;
+    private int bootstrapSampleSize;
     private IndependenceTest[] tests;
     private boolean verbose = false;
 
@@ -70,6 +71,7 @@ public class IndTestFisherZBootstrap implements IndependenceTest {
         setAlpha(alpha);
 
         this.numBootstrapSamples = numBootstrapSamples;
+        this.bootstrapSampleSize = bootstrapSampleSize;
         TetradMatrix[] bootstrapSamples = new TetradMatrix[numBootstrapSamples];
         this.tests = new IndependenceTest[numBootstrapSamples];
 
@@ -207,6 +209,11 @@ public class IndTestFisherZBootstrap implements IndependenceTest {
     @Override
     public double getScore() {
         return -(getPValue() - getAlpha());
+    }
+
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestFisherZBootstrap(this.dataSet, this.alpha, this.numBootstrapSamples, this.bootstrapSampleSize);
     }
 
     public boolean isVerbose() {

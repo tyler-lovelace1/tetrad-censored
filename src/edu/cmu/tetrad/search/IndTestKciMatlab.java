@@ -259,6 +259,11 @@ public final class IndTestKciMatlab implements IndependenceTest {
         return getPValue();
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestKciMatlab(this.dataSet, this.alpha);
+    }
+
     /**
      * @return a string representation of this test.
      */

@@ -434,6 +434,11 @@ public final class IndTestFisherZOnTheFly implements IndependenceTest {
         return 0;
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestFisherZOnTheFly(this.dataSet, this.alpha);
+    }
+
     public void shuffleVariables() {
         List<Node> nodes = new ArrayList(this.variables);
         Collections.shuffle(nodes);

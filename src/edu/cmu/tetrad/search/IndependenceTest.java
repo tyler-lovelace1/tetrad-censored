@@ -127,6 +127,8 @@ public interface IndependenceTest {
      */
     double getScore();
 
+    IndependenceTest clone();
+
 }
 
 

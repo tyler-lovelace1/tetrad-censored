@@ -27,6 +27,7 @@ import edu.cmu.tetrad.graph.GraphUtils;
 import edu.cmu.tetrad.graph.Node;
 import edu.cmu.tetrad.graph.Triple;
 import edu.cmu.tetrad.util.ChoiceGenerator;
+import edu.pitt.csb.mgm.IndTestMultinomialCC;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.*;
@@ -124,6 +125,7 @@ public class SepsetsMajorityConsumerProducer implements SepsetProducer {
             System.out.println("checking for collider centered on survival");
         }
         AtomicIntegerArray ret = tripleMap.get(new Triple(i, j, k));
+        System.out.println(new Triple(i, j, k) + ":\t\t" + ret);
         if (j.getName()=="survival"){
             System.out.println("number of sepsets with survival:\t" + ret.get(0));
             System.out.println("number of sepsets without survival:\t" + ret.get(1));
@@ -383,9 +385,11 @@ public class SepsetsMajorityConsumerProducer implements SepsetProducer {
     private class SepsetsCountsConsumer implements Runnable {
         private Broker broker;
         private ColliderTask poisonPill;
+        private IndependenceTest test;
 
-        public SepsetsCountsConsumer(Broker broker, final ColliderTask poisonPill) {
+        public SepsetsCountsConsumer(Broker broker, IndependenceTest test, final ColliderTask poisonPill) {
             this.broker = broker;
+            this.test = test;
             this.poisonPill = poisonPill;
         }
 
@@ -399,7 +403,7 @@ public class SepsetsMajorityConsumerProducer implements SepsetProducer {
                     if (task != null) {
                         boolean independent;
                         try {
-                            independent = independenceTest.isIndependent(task.x, task.y, task.z);
+                            independent = test.isIndependent(task.x, task.y, task.z);
                         } catch (Exception e) {
                             e.printStackTrace();
                             independent = true;
@@ -411,7 +415,15 @@ public class SepsetsMajorityConsumerProducer implements SepsetProducer {
 
                             int idx = (task.z.contains(task.triple.getY())) ? 0 : 1;
 
-                            tripleMap.get(task.triple).incrementAndGet(idx);
+                            int curr;
+//                            int curr = tripleMap.get(task.triple).get(idx);
+//                            int next = curr - 1;
+
+                            do {
+                                curr = tripleMap.get(task.triple).get(idx);
+//                                next = tripleMap.get(task.triple).incrementAndGet(idx);
+                            } while (!tripleMap.get(task.triple).compareAndSet(idx, curr, curr+1));
+
 //                            tripleMap.compute(task.triple, (k, v) -> {
 //                                v.incrementAndGet(idx);
 //                                return v;
@@ -457,7 +469,7 @@ public class SepsetsMajorityConsumerProducer implements SepsetProducer {
         try {
             status.add(executorService.submit(new SepsetsCountsProducer(broker, poisonPill)));
             for (int i = 0; i < parallelism; i++) {
-                status.add(executorService.submit(new SepsetsCountsConsumer(broker, poisonPill)));
+                status.add(executorService.submit(new SepsetsCountsConsumer(broker, independenceTest.clone(), poisonPill)));
             }
 
             for (int i = 0; i < parallelism+1; i++) {

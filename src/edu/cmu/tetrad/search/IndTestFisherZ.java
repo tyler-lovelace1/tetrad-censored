@@ -417,6 +417,11 @@ public final class IndTestFisherZ implements IndependenceTest {
         return Math.abs(fisherZ) - cutoff;
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestFisherZ(this.dataSet, this.alpha);
+    }
+
     public boolean isVerbose() {
         return verbose;
     }

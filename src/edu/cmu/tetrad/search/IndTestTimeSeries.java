@@ -1512,6 +1512,11 @@ public final class IndTestTimeSeries implements IndependenceTest {
         return getPValue();
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestTimeSeries(this.data, this.vars);
+    }
+
 }
 
 

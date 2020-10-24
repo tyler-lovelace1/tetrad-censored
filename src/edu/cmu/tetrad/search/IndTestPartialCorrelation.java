@@ -309,6 +309,11 @@ public final class IndTestPartialCorrelation implements IndependenceTest {
         return getPValue();
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestPartialCorrelation(this.dataSet, this.alpha);
+    }
+
 
 }
 

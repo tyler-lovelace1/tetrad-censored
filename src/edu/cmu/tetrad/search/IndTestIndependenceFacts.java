@@ -164,6 +164,11 @@ public final class IndTestIndependenceFacts implements IndependenceTest {
         return getPValue();
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestIndependenceFacts(this.facts);
+    }
+
     public boolean isVerbose() {
         return verbose;
     }

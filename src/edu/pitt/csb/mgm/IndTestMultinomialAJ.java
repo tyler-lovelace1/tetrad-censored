@@ -668,6 +668,11 @@ public class IndTestMultinomialAJ implements IndependenceTest {
         return getPValue();
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestMultinomialAJ(this.originalData, this.alpha, this.preferLinear);
+    }
+
     /**
      * @return a string representation of this test.
      */

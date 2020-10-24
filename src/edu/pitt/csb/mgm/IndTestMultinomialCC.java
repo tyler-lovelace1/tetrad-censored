@@ -110,6 +110,27 @@ public class IndTestMultinomialCC implements IndependenceTest {
 
     }
 
+    public IndTestMultinomialCC(IndTestMultinomialCC other) {
+        this.preferLinear = other.preferLinear;
+        this.searchVariables = other.originalData.getVariables();
+        this.originalData = other.originalData.copy();
+        DataSet internalData = other.originalData.copy();
+        this.alpha = other.alpha;
+
+        List<Node> variables = internalData.getVariables();
+
+        for (Node node : variables) {
+            List<Node> nodes = expandVariable(internalData, node);
+            variablesPerNode.put(node, nodes);
+        }
+
+        this.internalData = internalData;
+        this.logisticRegression = new LogisticRegression(internalData);
+        this.regression = new RegressionDataset(internalData);
+        this.coxRegression = new CoxRegression(internalData);
+
+    }
+
     /**
      * @return an Independence test for a subset of the searchVariables.
      */
@@ -667,5 +688,10 @@ public class IndTestMultinomialCC implements IndependenceTest {
 
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
+    }
+
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestMultinomialCC(this.originalData, this.alpha, this.preferLinear);
     }
 }

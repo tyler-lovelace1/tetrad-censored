@@ -239,6 +239,11 @@ public class ProbabilisticMAPIndependence implements IndependenceTest {
         return getPValue();
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new ProbabilisticMAPIndependence(this.data);
+    }
+
     public Map<IndependenceFact, Double> getH() {
         return new HashMap<>(H);
     }

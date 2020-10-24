@@ -165,7 +165,7 @@ public class FasStableConsumerProducer implements IFas {
         List<Node> nodes = graph.getNodes();
 
         for (Node node : nodes) {
-            adjacencies.put(node, new HashSet<Node>());
+            adjacencies.put(node, new ConcurrentSkipListSet<>());
         }
 
 
@@ -363,8 +363,11 @@ public class FasStableConsumerProducer implements IFas {
                         broker.put(new IndependenceTask(x, y, empty));
                     }
                 }
-                broker.put(poisonPill);
-                broker.put(poisonPill);
+//                broker.put(poisonPill);
+//                broker.put(poisonPill);
+                for (int i = 0; i < parallelism; i++) {
+                    broker.put(poisonPill);
+                }
                 System.out.println("\t" + Thread.currentThread().getName() + ": ProducerDepth0 Finish");
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -423,8 +426,8 @@ public class FasStableConsumerProducer implements IFas {
                                         nf.format(test.getPValue()));
                             }
                         } else if (!forbiddenEdge(task.x, task.y)) {
-//                        adjacencies.get(task.x).add(task.y);
-//                        adjacencies.get(task.y).add(task.x);
+//                            adjacencies.get(task.x).add(task.y);
+//                            adjacencies.get(task.y).add(task.x);
 
 //                            System.out.println("adding edge:\t" + task.x + " --- " + task.y);
 
@@ -432,11 +435,13 @@ public class FasStableConsumerProducer implements IFas {
                             Set<Node> adjx = new HashSet<>();
                             while (!adjx.contains(task.y)) {
                                 try {
-                                    adjx = new HashSet<>(adjacencies.compute(task.x, (k, v) -> {
+//                                    System.out.println("X:\tadding edge:\t" + task.x + " --- " + task.y);
+                                    adjx = adjacencies.compute(task.x, (k, v) -> {
                                         v.add(finalTask.y);
                                         return v;
-                                    }));
+                                    });
                                 } catch (ConcurrentModificationException e) {
+                                    e.printStackTrace();
                                     adjx = new HashSet<>();
                                 }
                             }
@@ -444,11 +449,13 @@ public class FasStableConsumerProducer implements IFas {
                             Set<Node> adjy = new HashSet<>();
                             while (!adjy.contains(task.x)) {
                                 try {
-                                    adjy = new HashSet<>(adjacencies.compute(task.y, (k, v) -> {
+//                                    System.out.println("Y:\tadding edge:\t" + task.x + " --- " + task.y);
+                                    adjy = adjacencies.compute(task.y, (k, v) -> {
                                         v.add(finalTask.x);
                                         return v;
-                                    }));
+                                    });
                                 } catch (ConcurrentModificationException e) {
+                                    e.printStackTrace();
                                     adjy = new HashSet<>();
                                 }
                             }
@@ -490,7 +497,7 @@ public class FasStableConsumerProducer implements IFas {
         try {
             status.add(executorService.submit(new ProducerDepth0(broker, nodes, poisonPill)));
             for (int i = 0; i < parallelism; i++) {
-                status.add(executorService.submit(new ConsumerDepth0(broker, test, adjacencies, poisonPill)));
+                status.add(executorService.submit(new ConsumerDepth0(broker, test.clone(), adjacencies, poisonPill)));
             }
 
             for (int i = 0; i < parallelism+1; i++) {
@@ -597,8 +604,11 @@ public class FasStableConsumerProducer implements IFas {
                         }
                     }
                 }
-                broker.put(poisonPill);
-                broker.put(poisonPill);
+//                broker.put(poisonPill);
+//                broker.put(poisonPill);
+                for (int i = 0; i < parallelism; i++) {
+                    broker.put(poisonPill);
+                }
                 System.out.println("\t" + Thread.currentThread().getName() + ": ProducerDepth" + depth + " Finish");
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -661,11 +671,13 @@ public class FasStableConsumerProducer implements IFas {
                                 Set<Node> adjx;
                                 do {
                                     try {
-                                        adjx = new HashSet<>(adjacencies.compute(task.x, (k, v) -> {
+//                                        System.out.println("X:\tremoving edge:\t" + task.x + " --- " + task.y);
+                                        adjx = adjacencies.compute(task.x, (k, v) -> {
                                             v.remove(finalTask.y);
                                             return v;
-                                        }));
+                                        });
                                     } catch (ConcurrentModificationException e) {
+                                        e.printStackTrace();
                                         adjx = adjacencies.get(task.x);
                                     }
                                 } while (adjx.contains(task.y));
@@ -673,11 +685,13 @@ public class FasStableConsumerProducer implements IFas {
                                 Set<Node> adjy;
                                 do {
                                     try {
-                                        adjy = new HashSet<>(adjacencies.compute(task.y, (k, v) -> {
+//                                        System.out.println("Y:\tremoving edge:\t" + task.x + " --- " + task.y);
+                                        adjy = adjacencies.compute(task.y, (k, v) -> {
                                             v.remove(finalTask.x);
                                             return v;
-                                        }));
+                                        });
                                     } catch (ConcurrentModificationException e) {
+                                        e.printStackTrace();
                                         adjy = adjacencies.get(task.y);
                                     }
                                 } while (adjy.contains(task.x));
@@ -748,7 +762,7 @@ public class FasStableConsumerProducer implements IFas {
         try {
             status.add(executorService.submit(new ProducerDepth(broker, nodes, adjacenciesCopy, depth, poisonPill)));
             for (int i = 0; i < parallelism; i++) {
-                status.add(executorService.submit(new ConsumerDepth(broker, test, adjacencies, poisonPill)));
+                status.add(executorService.submit(new ConsumerDepth(broker, test.clone(), adjacencies, poisonPill)));
             }
 
             for (int i = 0; i < parallelism+1; i++) {

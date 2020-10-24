@@ -230,11 +230,14 @@ public class PossibleDsepFciConsumerProducer {
     private class PossibleDsepConsumer implements Runnable {
         private Broker broker;
         private ConcurrentMap<Edge, List<Node>> edgeCondsetMap;
+        private IndependenceTest indTest;
         private PossibleDsepTask poisonPill;
+
         public PossibleDsepConsumer(Broker broker, ConcurrentMap<Edge, List<Node>> edgeCondsetMap,
-                                    final PossibleDsepTask poisonPill) {
+                                    IndependenceTest indTest, final PossibleDsepTask poisonPill) {
             this.broker = broker;
             this.edgeCondsetMap = edgeCondsetMap;
+            this.indTest = indTest;
             this.poisonPill = poisonPill;
         }
 
@@ -252,8 +255,10 @@ public class PossibleDsepFciConsumerProducer {
                     }
 
                     if (!edgeCondsetMap.containsKey(task.edge)) {
-                        if (test.isIndependent(task.edge.getNode1(), task.edge.getNode2(), task.condSet)) {
-                            edgeCondsetMap.putIfAbsent(task.edge, task.condSet);
+                        if (indTest.isIndependent(task.edge.getNode1(), task.edge.getNode2(), task.condSet)) {
+                            do {
+                                edgeCondsetMap.putIfAbsent(task.edge, task.condSet);
+                            } while (!edgeCondsetMap.containsKey(task.edge));
                         }
                     }
                     task = broker.get();
@@ -282,7 +287,7 @@ public class PossibleDsepFciConsumerProducer {
         try {
             status.add(executorService.submit(new PossibleDsepProducer(broker, edges, poisonPill)));
             for (int i = 0; i < parallelism; i++) {
-                status.add(executorService.submit(new PossibleDsepConsumer(broker, edgeCondsetMap, poisonPill)));
+                status.add(executorService.submit(new PossibleDsepConsumer(broker, edgeCondsetMap, test.clone(), poisonPill)));
             }
 
             for (int i = 0; i < parallelism+1; i++) {

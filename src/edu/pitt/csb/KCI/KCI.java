@@ -1145,4 +1145,9 @@ public class KCI implements IndependenceTest {
     {
         return 0;
     }
+
+    @Override
+    public IndependenceTest clone() {
+        return new KCI(this.dat, this.alpha, this.alpha2, this.truth, this.lambdaMGM);
+    }
 }

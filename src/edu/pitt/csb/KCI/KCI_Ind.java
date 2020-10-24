@@ -187,6 +187,12 @@ public class KCI_Ind implements IndependenceTest {
     {
         return 0;
     }
+
+    @Override
+    public IndependenceTest clone() {
+        return new KCI_Ind(this.ii.getData(), this.dat, this.alpha, this.ii.getAlpha(), this.tg, this.cutoff);
+    }
+
     public static double mean(double[] curr) {
 
         double sum = 0;

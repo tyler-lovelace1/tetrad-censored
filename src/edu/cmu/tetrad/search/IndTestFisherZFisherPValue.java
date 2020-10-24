@@ -298,6 +298,11 @@ public final class IndTestFisherZFisherPValue implements IndependenceTest {
         return getPValue();
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestFisherZFisherPValue(this.dataSets, this.alpha);
+    }
+
     /**
      * @return a string representation of this test.
      */

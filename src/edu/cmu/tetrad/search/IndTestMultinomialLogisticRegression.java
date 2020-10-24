@@ -435,6 +435,11 @@ public class IndTestMultinomialLogisticRegression implements IndependenceTest {
         return 0;
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestMultinomialLogisticRegression(this.originalData, this.alpha);
+    }
+
     /**
      * @return a string representation of this test.
      */

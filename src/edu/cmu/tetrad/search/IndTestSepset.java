@@ -274,6 +274,11 @@ public class IndTestSepset implements IndependenceTest {
         return getPValue();
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestSepset(this.sepset, new ArrayList<>(this.nodesToVariables.keySet()));
+    }
+
     public boolean isVerbose() {
         return verbose;
     }

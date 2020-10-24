@@ -814,6 +814,11 @@ public final class IndTestHsic implements IndependenceTest {
         return getPValue();
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestHsic(this.dataSet, this.alpha);
+    }
+
     public void shuffleVariables() {
         List<Node> nodes = new ArrayList(this.variables);
         Collections.shuffle(nodes);

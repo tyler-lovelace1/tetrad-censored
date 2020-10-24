@@ -397,6 +397,11 @@ public final class IndTestGSquare implements IndependenceTest {
         return getPValue();
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestGSquare(this.dataSet, this.alpha);
+    }
+
 }
 
 

@@ -350,6 +350,11 @@ public final class IndTestFisherZConcatenateResiduals implements IndependenceTes
         return -(getPValue() - getAlpha());
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestFisherZConcatenateResiduals(this.dataSets, this.alpha);
+    }
+
 
     /**
      * @return a string representation of this test.

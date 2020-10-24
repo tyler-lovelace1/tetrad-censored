@@ -412,6 +412,11 @@ public final class IndTestRegression implements IndependenceTest {
         return getPValue();
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestRegression(this.dataSet, this.alpha);
+    }
+
     public boolean isVerbose() {
         return verbose;
     }

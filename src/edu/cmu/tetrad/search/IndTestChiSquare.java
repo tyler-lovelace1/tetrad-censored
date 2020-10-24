@@ -401,6 +401,11 @@ public final class IndTestChiSquare implements IndependenceTest {
         return -(getPValue() - getAlpha());
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestChiSquare(this.dataSet, this.getAlpha());
+    }
+
     public void startRecordingFacts() {
         this.facts = new HashSet<>();
 

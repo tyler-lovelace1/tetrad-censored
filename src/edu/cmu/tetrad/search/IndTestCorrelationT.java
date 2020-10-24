@@ -402,6 +402,14 @@ public final class IndTestCorrelationT implements IndependenceTest {
         return -(getPValue() - getAlpha());
     }
 
+    @Override
+    public IndependenceTest clone() {
+        if (this.dataSet!= null)
+            return new IndTestCorrelationT(this.dataSet, this.alpha);
+        else
+            return new IndTestCorrelationT(this.covMatrix, this.alpha);
+    }
+
     public TDistribution gettDistribution() {
         return tDistribution;
     }

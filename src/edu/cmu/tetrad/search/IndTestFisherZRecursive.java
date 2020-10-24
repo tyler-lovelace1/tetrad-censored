@@ -454,6 +454,11 @@ public final class IndTestFisherZRecursive implements IndependenceTest {
         return getPValue();
     }
 
+    @Override
+    public IndependenceTest clone() {
+        return new IndTestFisherZRecursive(this.dataSet, this.alpha);
+    }
+
     public boolean isVerbose() {
         return verbose;
     }
