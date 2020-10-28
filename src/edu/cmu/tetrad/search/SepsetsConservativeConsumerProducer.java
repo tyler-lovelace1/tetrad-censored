@@ -126,6 +126,7 @@ public class SepsetsConservativeConsumerProducer implements SepsetProducer {
             System.out.println("checking for collider centered on survival");
         }
         AtomicIntegerArray ret = tripleMap.get(new Triple(i, j, k));
+        System.out.println(new Triple(i, j, k) + "\t\t" + ret);
         if (j.getName()=="survival"){
             System.out.println("number of sepsets with survival:\t" + ret.get(0));
             System.out.println("number of sepsets without survival:\t" + ret.get(1));
@@ -383,9 +384,11 @@ public class SepsetsConservativeConsumerProducer implements SepsetProducer {
     private class SepsetsCountsConsumer implements Runnable {
         private Broker broker;
         private ColliderTask poisonPill;
+        private IndependenceTest test;
 
-        public SepsetsCountsConsumer(Broker broker, final ColliderTask poisonPill) {
+        public SepsetsCountsConsumer(Broker broker, IndependenceTest test, final ColliderTask poisonPill) {
             this.broker = broker;
+            this.test = test;
             this.poisonPill = poisonPill;
         }
 
@@ -402,14 +405,19 @@ public class SepsetsConservativeConsumerProducer implements SepsetProducer {
                         continue;
                     }
 
-                    if (independenceTest.isIndependent(task.x, task.y, task.z)) {
+                    if (test.isIndependent(task.x, task.y, task.z)) {
                         if (verbose) {
                             System.out.println("Indep: " + task.x + " _||_ " + task.y + " | " + task.z);
                         }
 
                         int idx = (task.z.contains(task.triple.getY())) ? 0 : 1;
 
-                        tripleMap.get(task.triple).incrementAndGet(idx);
+                        int curr;
+                        do {
+                            curr = tripleMap.get(task.triple).get(idx);
+                        } while (!tripleMap.get(task.triple).compareAndSet(idx, curr, curr+1));
+
+//                        tripleMap.get(task.triple).incrementAndGet(idx);
 
 //                        tripleMap.compute(task.triple, (k , v) -> {
 //                            v.incrementAndGet(idx);
@@ -456,7 +464,7 @@ public class SepsetsConservativeConsumerProducer implements SepsetProducer {
         try {
             status.add(executorService.submit(new SepsetsCountsProducer(broker, poisonPill)));
             for (int i = 0; i < parallelism; i++) {
-                status.add(executorService.submit(new SepsetsCountsConsumer(broker, poisonPill)));
+                status.add(executorService.submit(new SepsetsCountsConsumer(broker, independenceTest.clone(), poisonPill)));
             }
 
             for (int i = 0; i < parallelism+1; i++) {

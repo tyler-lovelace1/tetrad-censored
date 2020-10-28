@@ -125,7 +125,7 @@ public class SepsetsMajorityConsumerProducer implements SepsetProducer {
             System.out.println("checking for collider centered on survival");
         }
         AtomicIntegerArray ret = tripleMap.get(new Triple(i, j, k));
-        System.out.println(new Triple(i, j, k) + ":\t\t" + ret);
+        System.out.println(new Triple(i, j, k) + "\t\t" + ret);
         if (j.getName()=="survival"){
             System.out.println("number of sepsets with survival:\t" + ret.get(0));
             System.out.println("number of sepsets without survival:\t" + ret.get(1));
@@ -416,12 +416,8 @@ public class SepsetsMajorityConsumerProducer implements SepsetProducer {
                             int idx = (task.z.contains(task.triple.getY())) ? 0 : 1;
 
                             int curr;
-//                            int curr = tripleMap.get(task.triple).get(idx);
-//                            int next = curr - 1;
-
                             do {
                                 curr = tripleMap.get(task.triple).get(idx);
-//                                next = tripleMap.get(task.triple).incrementAndGet(idx);
                             } while (!tripleMap.get(task.triple).compareAndSet(idx, curr, curr+1));
 
 //                            tripleMap.compute(task.triple, (k, v) -> {

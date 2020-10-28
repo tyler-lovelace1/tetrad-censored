@@ -610,6 +610,7 @@ public class runAlgorithms {
                 }
                 catch(Exception e)
                 {
+                    e.printStackTrace();
                     System.out.println("Unable to read knowledge file");
                     return;
                 }
