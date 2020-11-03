@@ -146,7 +146,7 @@ public class SepsetsConservativeConsumerProducer implements SepsetProducer {
             ret = temp;
             System.out.println("unknown triple added");
         }
-        return ret.get(0) == 0;
+        return (ret.get(0) == 0) & (ret.get(1) != 0);
     }
 
     public boolean isNoncollider(Node i, Node j, Node k) {
@@ -169,7 +169,7 @@ public class SepsetsConservativeConsumerProducer implements SepsetProducer {
 //            sepsetsListsMap.put(new Triple(i, j, k), ret);
             System.out.println("unknown triple added");
         }
-        return ret.get(1) == 0;
+        return (ret.get(0) != 0) & (ret.get(1) == 0);
     }
 
     // The published version.
