@@ -60,6 +60,7 @@ public class runAlgorithms {
     private static String kFile = "";//Path to the tetrad knowledge file
     private static double penalty = 1; //Penalty discount/Structure Prior for Score for FGES
     private static int maxNumDiscrete = 5; //Maximum number of categories a variable can have to be considered a discrete variable
+    private static int maxDepth = -1; //Maximum depth for constructing conditioning sets in FAS and PC/FCI algorithms
     private static boolean runStars = false; //Should we run StARS?
     private static boolean runMGM = false;// Should we run MGM to get an undirected skeleton?
     private static boolean runsurvivalMGM = false;// Should we run survivalMGM to get an undirected skeleton?
@@ -204,6 +205,18 @@ public class runAlgorithms {
                         System.err.println("Maximum number of categories for discrete variable cannot be negative");
                         System.exit(-1);
                     }
+                    count+=2;
+                }
+                else if(args[count].equals("-maxDepth")) //Maximum depth for conditioning sets
+                {
+                    //Maximum depth for conditioning sets
+                    maxDepth = Integer.parseInt(args[count+1]);
+                    if(maxDepth < -1)
+                    {
+                        System.err.println("Maximum depth must be -1 (unlimited) or >= 0: " + maxDepth);
+                        System.exit(-1);
+                    }
+                    System.out.println("Max depth set to " + maxDepth);
                     count+=2;
                 }
                 else if(args[count].equals("-steps")) //Should steps be run?
@@ -682,7 +695,7 @@ public class runAlgorithms {
                 if(!alg.equals("None") && !alg.equals("FGES")) {
                     System.out.println("Running " + alg + "...");
                     System.out.println("Maximum Heap Space: " + Runtime.getRuntime().maxMemory());
-                    DataGraphSearch gs = Algorithm.algToSearchWrapper(convert(alg), new double[]{alpha});
+                    DataGraphSearch gs = Algorithm.algToSearchWrapper(convert(alg), new double[]{alpha, (double) maxDepth});
                     if(g!=null) {
                         if (d.isCensored()) {
                             g = moralizeCensoredNeighbors(d, g, alpha);

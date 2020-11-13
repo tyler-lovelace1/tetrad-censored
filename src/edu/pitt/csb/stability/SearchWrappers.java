@@ -50,6 +50,7 @@ public class SearchWrappers {
                 pcs.setInitialGraph(initialGraph);
             if(knowledge!=null)
                 pcs.setKnowledge(knowledge);
+            pcs.setDepth((int) searchParams[1]);
             return pcs.search();
         }
     }
@@ -70,6 +71,7 @@ public class SearchWrappers {
                 pcs.setInitialGraph(initialGraph);
             if(knowledge!=null)
                 pcs.setKnowledge(knowledge);
+            pcs.setDepth((int) searchParams[1]);
             return pcs.search();
         }
     }
@@ -88,6 +90,7 @@ public class SearchWrappers {
                 pcs.setInitialGraph(initialGraph);
             if(knowledge!=null)
                 pcs.setKnowledge(knowledge);
+            pcs.setDepth((int) searchParams[1]);
             return pcs.search();
         }
     }
@@ -106,6 +109,7 @@ public class SearchWrappers {
                 pcs.setInitialGraph(initialGraph);
             if(knowledge!=null)
                 pcs.setKnowledge(knowledge);
+            pcs.setDepth((int) searchParams[1]);
             return pcs.search();
         }
     }
@@ -168,6 +172,7 @@ public class SearchWrappers {
                 f.setInitialGraph(initialGraph);
             if(knowledge!=null)
                 f.setKnowledge(knowledge);
+            f.setDepth((int) searchParams[1]);
             Graph g = f.search();
             Map<String,String> temp = f.whyOrient;
             for(String x:temp.keySet())
@@ -196,6 +201,7 @@ public class SearchWrappers {
                 f.setInitialGraph(initialGraph);
             if(knowledge!=null)
                 f.setKnowledge(knowledge);
+            f.setDepth((int) searchParams[1]);
             Graph g = f.search();
             Map<String,String> temp = f.whyOrient;
             for(String x:temp.keySet())
@@ -224,6 +230,7 @@ public class SearchWrappers {
                 f.setInitialGraph(initialGraph);
             if(knowledge!=null)
                 f.setKnowledge(knowledge);
+            f.setDepth((int) searchParams[1]);
             Graph g = f.search();
             Map<String,String> temp = f.whyOrient;
             for(String x:temp.keySet())
